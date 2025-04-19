@@ -86,7 +86,7 @@ button:disabled {
 }
 
 #run-button {
-  background: #28a745;
+  background: #ffc107;
   color: white;
   border-radius: 5px;
   padding: 10px 20px;
@@ -94,7 +94,7 @@ button:disabled {
 }
 
 #run-button:hover {
-  background: #218838;
+  background: #e0a800
 }
 
 #run-button:disabled {
@@ -118,6 +118,14 @@ button:disabled {
 #card-description {
   font-size: 0.9rem;
   margin: 10px 0;
+}
+
+.action-button {
+  background: #28a745;
+}
+
+.action-button:hover {
+  background: #218838;
 }
 
 /* Card styles */
