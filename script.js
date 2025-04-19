@@ -312,7 +312,7 @@ function fightMonster(card, isBarehanded) {
   }
 
   if (isBarehanded) {
-    const didSurvive = takeDamage(excess);
+    const didSurvive = takeDamage(card.value);
     if (!didSurvive) return;
     log(`Fought ${card.getTitle()} barehanded and took ${card.value} damage.`);
   } else {
@@ -322,7 +322,7 @@ function fightMonster(card, isBarehanded) {
     }
 
     if (weapon.durability <= card.value) {
-      const didSurvive = takeDamage(excess);
+      const didSurvive = takeDamage(card.value);
       if (!didSurvive) return;
       log(
         `Not enough durability! Fought barehanded and took ${card.value} damage.`
