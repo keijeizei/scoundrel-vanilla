@@ -1,0 +1,188 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #111;
+  color: #eee;
+  display: flex;
+  justify-content: center;
+  height: 100vh;
+}
+
+h1 {
+  margin: 0;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+h6 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: lighter;
+  color: #aaa;
+}
+
+button {
+  margin: 5px 0;
+  height: 40px;
+  background: #444;
+  color: #eee;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+button:disabled {
+  color: #888;
+  background: #222;
+  cursor: not-allowed;
+}
+
+.game-container {
+  text-align: center;
+  max-width: 277px;
+  margin-top: 20px;
+}
+
+.deck-container {
+  display: flex;
+  justify-content: space-between;
+  margin: 20px 0;
+}
+
+.status {
+  margin-bottom: 20px;
+}
+
+#room {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#card-counter {
+  font-weight: bold;
+}
+
+#health {
+  width: 80px;
+  height: 80px;
+  background-image: url('d20.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+}
+
+#run-button {
+  background: #28a745;
+  color: white;
+  border-radius: 5px;
+  padding: 10px 20px;
+  font-size: 1rem;
+}
+
+#run-button:hover {
+  background: #218838;
+}
+
+#run-button:disabled {
+  background: #222;
+  cursor: not-allowed;
+}
+
+/* Card details */
+.card-details {
+  width: calc(100% - 32px);
+  margin: 20px 0;
+  padding: 16px;
+  background: #222;
+  flex-direction: column;
+}
+
+.card-details.hidden {
+  display: none;
+}
+
+#card-description {
+  font-size: 0.9rem;
+  margin: 10px 0;
+}
+
+/* Card styles */
+.card {
+  width: 60px;
+  height: 90px;
+  background: #333;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.card.heart { 
+  color: red;
+  border: 1px solid #555;
+}
+.card.diamond {
+  color: orange;
+  border: 1px solid #555;
+}
+.card.spade, .card.club {
+  color: white;
+  border: 1px solid #555;
+}
+
+.card.empty {
+  background: #222;
+  cursor: not-allowed;
+  border: 1px dashed #555;
+}
+
+.card.back {
+  background: linear-gradient(45deg, #333 25%, transparent 25%), linear-gradient(315deg, #333 25%, transparent 25%) ,linear-gradient(45deg, transparent 24%,#af5858 25%, #af5858 30%, transparent 31%, transparent 39%,#af5858 40%, #af5858 45%, transparent 45%),linear-gradient(315deg, transparent 24%,#af5858 25%, #af5858 30%, transparent 31%, transparent 39%,#af5858 40%, #af5858 45%, transparent 45%);
+  background-size: 1em 1em;
+  background-color: #333;
+  opacity: 1;
+  box-sizing: border-box;
+  border: 5px solid #666;
+  box-shadow: 2px 2px 0 #555;
+}
+
+#log {
+  margin-top: 20px;
+  font-size: 0.9rem;
+  min-height: 40px;
+  white-space: pre-wrap;
+}
+
+.weapon-chain {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+#weapon-monsters {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.divider {
+  height: 90px;
+  width: 2px;
+  background: #444;
+}
