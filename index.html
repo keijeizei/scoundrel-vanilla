@@ -13,15 +13,22 @@
     <h6>Made by Zoren</h6>
     <div class="deck-container">
       <div class="card back" id="card-counter"></div>
-      <div id="health">20</div>
+      <div class="glow" id="health">20</div>
       <button id="run-button">Run</button>
     </div>
-    <div class="room" id="room"></div>
-    <div class="status">
-      <p>Weapon</p>
+    <div class="prompt-container">
+      <div id="prompt"></div>
+      <button class="action-button restart-button green" id="restart-button">Play again</button>
+    </div>
+    <div class="labeled-container" id="room-container">
+      <h5>ROOM</h5>
+      <div class="room" id="room"></div>
+    </div>
+    <div class="labeled-container">
+      <h5>WEAPON</h5>
       <div class="weapon-chain">
         <div class="card empty" id="weapon"></div>
-        <div class="divider"></div>
+        <div id="divider"></div>
         <div id="weapon-monsters"></div>
       </div>
     </div>

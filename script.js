@@ -85,11 +85,16 @@ const faceValuesNames = {
 };
 const MAX_WEAPON_DURABILITY = 15;
 const MAX_HEALTH = 20;
+const BASE_MONSTERS = 26;
 const OVERLAP_MARGIN_MAP = [1, 1, 1, 1, -24, -36, -43, -48, -51, -53];
 
 const healthEl = document.getElementById("health");
 const cardCounterEl = document.getElementById("card-counter");
+const promptEl = document.getElementById("prompt");
+const restartButtonEl = document.getElementById("restart-button");
+
 const weaponEl = document.getElementById("weapon");
+const dividerEl = document.getElementById("divider");
 const weaponMonstersEl = document.getElementById("weapon-monsters");
 
 const cardDetails = document.getElementById("card-details");
@@ -106,6 +111,7 @@ const runBtn = document.getElementById("run-button");
 // Game state
 let deck = [];
 let health = MAX_HEALTH;
+let remainingMonsters = BASE_MONSTERS;
 let weapon = null;
 let weaponChain = [];
 let canDrinkPotion = true;
@@ -116,6 +122,11 @@ let isGameOver = false;
 // Utility functions
 function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function getHealthGlowColor(health) {
+  const hue = (health / 20) * 100;
+  return `hsl(${hue}, 100%, 50%)`;
 }
 
 // Debugging functions
@@ -154,6 +165,31 @@ function increaseWeaponChain() {
   updateUI();
 }
 
+// Game initialization
+function initializeGame() {
+  // game state
+  health = MAX_HEALTH;
+  remainingMonsters = BASE_MONSTERS;
+  weapon = null;
+  weaponChain = [];
+  canDrinkPotion = true;
+  currentRoom = [];
+  canRun = true;
+  isGameOver = false;
+  deck = [];
+
+  // UI state
+  restartButtonEl.style.display = "none";
+  promptEl.textContent = "Defeat all monsters to win.";
+  logEl.textContent = "";
+  dividerEl.style.display = "none";
+  runBtn.disabled = false;
+
+  buildDeck();
+  drawRoom();
+  updateUI();
+}
+
 function buildDeck() {
   for (let i = 2; i <= 14; i++) {
     for (let suit of suits) {
@@ -182,11 +218,7 @@ function shuffle(array) {
  */
 function drawRoom() {
   currentRoom = deck.splice(0, 4);
-  cardCounterEl.textContent = `${deck.length}`;
-  if (deck.length === 0) {
-    cardCounterEl.classList.remove("back");
-    cardCounterEl.classList.add("empty");
-  }
+
   renderRoom();
 }
 
@@ -240,7 +272,9 @@ function showCardDescription(card) {
   // reset actions visibility
   cardPrimaryActionEl.style.display = "block";
   cardSecondaryActionEl.style.display = "block";
-
+  cardPrimaryActionEl.classList.remove("red", "green", "orange");
+  cardSecondaryActionEl.classList.remove("red", "green", "orange");
+  
   cardNameEl.textContent = card.getTitle();
   cardTypeEl.textContent = capitalizeFirstLetter(card.getType());
   cardDescriptionEl.textContent = card.getDescription();
@@ -248,17 +282,19 @@ function showCardDescription(card) {
 
   if (type === "monster") {
     cardPrimaryActionEl.textContent = "Fight barehanded";
+    cardPrimaryActionEl.classList.add("orange");
     cardPrimaryActionEl.onclick = () => fightMonster(card, true);
     cardSecondaryActionEl.textContent = "Fight with weapon";
+    cardSecondaryActionEl.classList.add("green");
     cardSecondaryActionEl.onclick = () => fightMonster(card, false);
 
     // hide secondary action if weapon cannot be used
     if (!weapon || weapon.durability <= card.value) {
       cardSecondaryActionEl.style.display = "none";
     }
-  }
-  if (type === "weapon") {
+  } else if (type === "weapon") {
     cardPrimaryActionEl.textContent = "Equip";
+    cardPrimaryActionEl.classList.add("green");
     cardPrimaryActionEl.onclick = () => equipWeapon(card);
 
     // hide action if weapon is already equipped
@@ -267,9 +303,9 @@ function showCardDescription(card) {
     }
     // no secondary action
     cardSecondaryActionEl.style.display = "none";
-  }
-  if (type === "potion") {
-    cardPrimaryActionEl.textContent = canDrinkPotion ? "Drink" : "Discard";
+  } else if (type === "potion") {
+    cardPrimaryActionEl.textContent = canDrinkPotion ? "Drink" : "Drink (no effect)";
+    cardPrimaryActionEl.classList.add(canDrinkPotion ? "green" : "red");
     cardPrimaryActionEl.onclick = () => drinkPotion(card);
 
     // no secondary action
@@ -277,27 +313,32 @@ function showCardDescription(card) {
   }
 }
 
-function showHealthDescription() {
-  cardNameEl.textContent = "20-sided die";
-  cardTypeEl.textContent = "Health";
-  cardDescriptionEl.textContent = "Shows your health points. Capped at 20.";
-  cardDetails.style.display = "flex";
+function showMiscDescription(object) {
+  switch (object) {
+    case "health":
+      cardNameEl.textContent = "d20";
+      cardTypeEl.textContent = "Health";
+      cardDescriptionEl.textContent = "A 20-sided die. Shows your health points. Capped at 20.";
+      break;
+    case "deck":
+      cardNameEl.textContent = "Deck of cards";
+      cardTypeEl.textContent = "Dungeon";
+      cardDescriptionEl.textContent =
+        "The source of all cards. Defeat all monster cards to win.";
+      break;
+    case "empty-weapon":
+      cardNameEl.textContent = "Empty weapon slot";
+      cardTypeEl.textContent = "Slot";
+      cardDescriptionEl.textContent = "Cards from the diamond suit can be equipped as weapons.";
+      break;
+  }
 
-  // no actions
+  cardDetails.style.display = "flex";
+  // hide actions
   cardPrimaryActionEl.style.display = "none";
   cardSecondaryActionEl.style.display = "none";
 }
 
-function showDeckDescription() {
-  cardNameEl.textContent = "Deck of cards";
-  cardTypeEl.textContent = "Dungeon";
-  cardDescriptionEl.textContent = "The source of all cards. Defeat all monsters to win.";
-  cardDetails.style.display = "flex";
-
-  // no actions
-  cardPrimaryActionEl.style.display = "none";
-  cardSecondaryActionEl.style.display = "none";
-}
 
 // Player actions
 function fightMonster(card, isBarehanded) {
@@ -313,8 +354,12 @@ function fightMonster(card, isBarehanded) {
 
   if (isBarehanded) {
     const didSurvive = takeDamage(card.value);
-    if (!didSurvive) return;
-    log(`Fought ${card.getTitle()} barehanded and took ${card.value} damage.`);
+    if (!didSurvive) {
+      log(`Fought the ${card.getTitle()} barehanded but did not survive.`);
+      return;
+    }
+    remainingMonsters--;
+    log(`Fought the ${card.getTitle()} barehanded and took ${card.value} damage.`);
   } else {
     if (!weapon) {
       log("Please equip a weapon first.");
@@ -323,7 +368,11 @@ function fightMonster(card, isBarehanded) {
 
     if (weapon.durability <= card.value) {
       const didSurvive = takeDamage(card.value);
-      if (!didSurvive) return;
+      if (!didSurvive) {
+        log(`Fought the ${card.getTitle()} barehanded but did not survive.`);
+        return;
+      }
+      remainingMonsters--;
       log(
         `Not enough durability! Fought barehanded and took ${card.value} damage.`
       );
@@ -335,12 +384,17 @@ function fightMonster(card, isBarehanded) {
     const excess = card.value - weapon.value;
     if (excess > 0) {
       const didSurvive = takeDamage(excess);
-      if (!didSurvive) return;
+      if (!didSurvive) {
+        log(`Fought the ${card.getTitle()} but did not survive.`);
+        return;
+      }
+      remainingMonsters--;
       log(`Defeated the ${card.getTitle()}, but took ${excess} excess damage.`);
     }
     weapon.durability = card.value;
   }
 
+  checkIfPlayerWon();
   playCard(card);
 }
 
@@ -355,6 +409,9 @@ function equipWeapon(card) {
 
   weapon = new Weapon(card.suit, card.value, true);
   weaponChain = [];
+
+  dividerEl.style.display = "block";
+
   log(`Equipped the ${card.getTitle()}.`);
   playCard(card);
 }
@@ -394,22 +451,47 @@ function takeDamage(amount) {
   health -= amount;
   if (health <= 0) {
     health = 0;
-    log("You died!");
-    endGame();
+    endGame(false);
     return false;
   }
   return true;
 }
 
 function updateUI() {
+  // update health UI
   healthEl.textContent = health;
+
+  const color = getHealthGlowColor(health);
+  healthEl.style.textShadow = `
+    0 0 10px ${color},
+    0 0 20px ${color},
+    0 0 30px ${color},
+    0 0 40px ${color},
+    0 0 50px ${color}
+  `;
+
+  // update deck UI
+  cardCounterEl.textContent = `${deck.length}`;
+  if (deck.length === 0) {
+    cardCounterEl.classList.remove("back");
+    cardCounterEl.classList.add("empty");
+  }
+
+  // update weapon UI
   weaponEl.innerHTML = "";
   weaponMonstersEl.innerHTML = "";
+
   if (weapon) {
     const weaponDiv = document.createElement("div");
     const weaponCard = createCardElement(weapon);
     weaponCard.onclick = () => showCardDescription(weapon);
     weaponDiv.appendChild(weaponCard);
+
+    weaponEl.appendChild(weaponDiv);
+  }
+
+  if (weaponChain.length > 0) {
+    weaponMonstersEl.style.display = "flex";
 
     weaponChain.forEach((monster, index) => {
       const mCard = createCardElement(monster);
@@ -422,9 +504,10 @@ function updateUI() {
       mCard.style.marginLeft = `${overlapMargin}px`;
       weaponMonstersEl.appendChild(mCard);
     });
-
-    weaponEl.appendChild(weaponDiv);
+  } else {
+    weaponMonstersEl.style.display = "none";
   }
+
   renderRoom();
 }
 
@@ -444,11 +527,24 @@ function log(message) {
   logEl.textContent = `${message}\n${logEl.textContent}`;
 }
 
-function endGame() {
-  roomEl.innerHTML = "<p>Game Over</p>";
+function checkIfPlayerWon() {
+  if (remainingMonsters <= 0) {
+    log("You defeated all monsters! You win!");
+    endGame(true);
+  }
+}
+
+function endGame(didWin) {
+  if (didWin) {
+    promptEl.textContent = "You win!";
+  } else {
+    promptEl.textContent = "You died.";
+  }
   cardDetails.style.display = "none";
   runBtn.disabled = true;
+  restartButtonEl.style.display = "block";
   isGameOver = true;
+  updateUI();
 }
 
 // Onclick functions
@@ -466,13 +562,16 @@ runBtn.onclick = () => {
   log("You ran from the room.");
 };
 
+restartButtonEl.onclick = () => {
+  initializeGame();
+}
+
 healthEl.onclick = () => {
-  showHealthDescription();
+  showMiscDescription("health");
 }
 
 cardCounterEl.onclick = () => {
-  showDeckDescription();
+  showMiscDescription("deck");
 }
 
-buildDeck();
-drawRoom();
+initializeGame();

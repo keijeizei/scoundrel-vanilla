@@ -16,6 +16,13 @@ h2 {
   font-size: 1rem;
 }
 
+h5 {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: bolder;
+  color: #aaa;
+}
+
 h6 {
   margin: 0;
   font-size: 0.8rem;
@@ -41,9 +48,33 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Colors */
+.green {
+  background: #28a745;
+}
+
+.green:hover {
+  background: #218838;
+}
+
+.red {
+  background: #dc3545;
+}
+.red:hover {
+  background: #c82333;
+}
+
+.orange {
+  background: #fd7e14;
+}
+
+.orange:hover {
+  background: #e67e22;
+}
+
 .game-container {
   text-align: center;
-  max-width: 277px;
+  max-width: 280px;
   margin-top: 20px;
 }
 
@@ -53,7 +84,10 @@ button:disabled {
   margin: 20px 0;
 }
 
-.status {
+.labeled-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
   margin-bottom: 20px;
 }
 
@@ -71,11 +105,6 @@ button:disabled {
 #health {
   width: 80px;
   height: 80px;
-  background-image: url('d20.png');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-
   display: flex;
   align-items: center;
   justify-content: center;
@@ -83,6 +112,13 @@ button:disabled {
   font-weight: bold;
   text-align: center;
   cursor: pointer;
+
+  background-image: url('d20.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+
+  transition: text-shadow 1s;
 }
 
 #run-button {
@@ -102,6 +138,15 @@ button:disabled {
   cursor: not-allowed;
 }
 
+.prompt-container {
+  margin: 20px 0;
+}
+
+.restart-button {
+  display: none;
+  width: 100%;
+}
+
 /* Card details */
 .card-details {
   width: calc(100% - 32px);
@@ -118,14 +163,6 @@ button:disabled {
 #card-description {
   font-size: 0.9rem;
   margin: 10px 0;
-}
-
-.action-button {
-  background: #28a745;
-}
-
-.action-button:hover {
-  background: #218838;
 }
 
 /* Card styles */
@@ -189,7 +226,8 @@ button:disabled {
   gap: 10px;
 }
 
-.divider {
+#divider {
+  display: none;
   height: 90px;
   width: 2px;
   background: #444;
