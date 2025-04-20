@@ -142,6 +142,10 @@ button:disabled {
   margin: 20px 0;
 }
 
+#prompt {
+  font-size: 0.8rem;
+}
+
 .restart-button {
   display: none;
   width: 100%;
@@ -193,7 +197,6 @@ button:disabled {
 
 .card.empty {
   background: #222;
-  cursor: not-allowed;
   border: 1px dashed #555;
 }
 

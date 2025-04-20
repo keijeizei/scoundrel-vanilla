@@ -180,7 +180,7 @@ function initializeGame() {
 
   // UI state
   restartButtonEl.style.display = "none";
-  promptEl.textContent = "Defeat all monsters to win.";
+  promptEl.textContent = "Interact with 3 cards in the room or run to proceed. Click objects to inspect.";
   logEl.textContent = "";
   dividerEl.style.display = "none";
   runBtn.disabled = false;
@@ -324,12 +324,16 @@ function showMiscDescription(object) {
       cardNameEl.textContent = "Deck of cards";
       cardTypeEl.textContent = "Dungeon";
       cardDescriptionEl.textContent =
-        "The source of all cards. Defeat all monster cards to win.";
+        "The source of all cards. Defeat all 26 monster cards to win.";
       break;
-    case "empty-weapon":
-      cardNameEl.textContent = "Empty weapon slot";
-      cardTypeEl.textContent = "Slot";
-      cardDescriptionEl.textContent = "Cards from the diamond suit can be equipped as weapons.";
+    case "weapon":
+      if (weapon) {
+        showCardDescription(weapon);
+      } else {
+        cardNameEl.textContent = "Empty weapon slot";
+        cardTypeEl.textContent = "Slot";
+        cardDescriptionEl.textContent = "Equip a diamond card as a weapon to fight monsters more effectively.";
+      }
       break;
   }
 
@@ -439,10 +443,13 @@ function playCard(card) {
   const index = currentRoom.findIndex(
     (roomCard) => roomCard.suit === card.suit && roomCard.value === card.value
   );
-  console.log(index, card, currentRoom);
   currentRoom.splice(index, 1);
+  // cannot run after playing a card
+  canRun = false;
 
   cardDetails.style.display = "none";
+  runBtn.disabled = true;
+
   updateUI();
   checkIfRoomFinished();
 }
@@ -482,12 +489,8 @@ function updateUI() {
   weaponMonstersEl.innerHTML = "";
 
   if (weapon) {
-    const weaponDiv = document.createElement("div");
     const weaponCard = createCardElement(weapon);
-    weaponCard.onclick = () => showCardDescription(weapon);
-    weaponDiv.appendChild(weaponCard);
-
-    weaponEl.appendChild(weaponDiv);
+    weaponEl.appendChild(weaponCard);
   }
 
   if (weaponChain.length > 0) {
@@ -550,7 +553,7 @@ function endGame(didWin) {
 // Onclick functions
 runBtn.onclick = () => {
   if (!canRun) {
-    log("You can't run twice in a row!");
+    log("You can't run twice in a row or after you have selected a card!");
     return;
   }
   cardDetails.style.display = "none";
@@ -572,6 +575,10 @@ healthEl.onclick = () => {
 
 cardCounterEl.onclick = () => {
   showMiscDescription("deck");
+}
+
+weaponEl.onclick = () => {
+  showMiscDescription("weapon");
 }
 
 initializeGame();
