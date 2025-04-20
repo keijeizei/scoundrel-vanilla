@@ -324,7 +324,7 @@ function showMiscDescription(object) {
       cardNameEl.textContent = "Deck of cards";
       cardTypeEl.textContent = "Dungeon";
       cardDescriptionEl.textContent =
-        "The source of all cards. Defeat all 26 monster cards to win.";
+        "The source of all cards. Cards are dealt in 'rooms', which are groups of 4 cards. Defeat all 26 monster cards to win.";
       break;
     case "weapon":
       if (weapon) {
