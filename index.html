@@ -9,12 +9,18 @@
 <body>
   <div class="game-container">
     <h1>Scoundrel</h1>
+    <h6>A single player rogue-like card game</h6>
     <h6>Original game by Zach Gage and Kurt Bieg</h6>
-    <h6>Made by Zoren</h6>
     <div class="deck-container">
       <div class="card back" id="card-counter"></div>
       <div class="glow" id="health">20</div>
-      <button id="run-button">Run</button>
+      <div class="button-container">
+        <button class="red" id="run-button">Run</button>
+        <div class="icon-button-container">
+          <img src="settings.png" alt="Settings" class="icon-button" id="settings" />
+          <!-- <img src="help.png" alt="Settings" class="icon-button" id="help" /> -->
+        </div>
+      </div>
     </div>
     <div class="prompt-container">
       <div id="prompt"></div>
@@ -35,11 +41,28 @@
     <div class="card-details hidden" id="card-details">
       <h2 id="card-name"></h2>
       <h6 id="card-type"></h6>
-      <div id="card-description">Deals 12 damage.</div>
-      <button class="action-button" id="primary-action">Fight with weapon</button>
-      <button class="action-button" id="secondary-action">Fight barehanded</button>
+      <div id="card-description"></div>
+      <button class="action-button" id="primary-action"></button>
+      <button class="action-button" id="secondary-action"></button>
     </div>
     <p id="log"></p>
+  </div>
+
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <h2>Settings</h2>
+      <div class="option">
+        <span>Easy mode (requires restart)<h6>Start the game with complete red cards</h6></span>
+        <label class="switch">
+          <input type="checkbox" id="easy-mode-toggle">
+          <span class="slider"></span>
+        </label>
+      </div>
+      <div class="option">
+        <button class="action-button orange" id="restart-button-settings">Restart</button>
+        <button class="action-button" id="close-modal-button">Close</button>
+      </div>
+    </div>
   </div>
   <script src="script.js"></script>
 </body>

@@ -108,6 +108,14 @@ const roomEl = document.getElementById("room");
 const logEl = document.getElementById("log");
 const runBtn = document.getElementById("run-button");
 
+const settingsBtn = document.getElementById("settings");
+const easyModeEl = document.getElementById("easy-mode-toggle");
+const restartButtonSettingsEl = document.getElementById("restart-button-settings");
+const closeModalBtn = document.getElementById("close-modal-button");
+const modalEl = document.getElementById("modal-overlay");
+
+let easyMode = false;
+
 // Game state
 let deck = [];
 let health = MAX_HEALTH;
@@ -167,6 +175,8 @@ function increaseWeaponChain() {
 
 // Game initialization
 function initializeGame() {
+  console.log("Easy mode:", easyMode);
+
   // game state
   health = MAX_HEALTH;
   remainingMonsters = BASE_MONSTERS;
@@ -180,7 +190,7 @@ function initializeGame() {
 
   // UI state
   restartButtonEl.style.display = "none";
-  promptEl.textContent = "Interact with 3 cards in the room or run to proceed. Click objects to inspect.";
+  promptEl.textContent = "Interact with 3 cards in the room or Run to proceed. Click objects to inspect.";
   logEl.textContent = "";
   dividerEl.style.display = "none";
   runBtn.disabled = false;
@@ -193,9 +203,9 @@ function initializeGame() {
 function buildDeck() {
   for (let i = 2; i <= 14; i++) {
     for (let suit of suits) {
-      if (suit === "heart" && i <= 10) {
+      if (suit === "heart" && (i <= 10 || easyMode)) {
         deck.push(new Card(suit, i));
-      } else if (suit === "diamond" && i <= 10) {
+      } else if (suit === "diamond" && (i <= 10 || easyMode)) {
         deck.push(new Card(suit, i));
       } else if (suit === "spade" || suit === "club") {
         deck.push(new Card(suit, i));
@@ -332,7 +342,7 @@ function showMiscDescription(object) {
       } else {
         cardNameEl.textContent = "Empty weapon slot";
         cardTypeEl.textContent = "Slot";
-        cardDescriptionEl.textContent = "Equip a diamond card as a weapon to fight monsters more effectively.";
+        cardDescriptionEl.textContent = "Equip a Diamond card as a weapon to fight monsters more effectively.";
       }
       break;
   }
@@ -579,6 +589,23 @@ cardCounterEl.onclick = () => {
 
 weaponEl.onclick = () => {
   showMiscDescription("weapon");
+}
+
+closeModalBtn.onclick = () => {
+  modalEl.style.display = "none";
+}
+
+settingsBtn.onclick = () => {
+  modalEl.style.display = "flex";
+}
+
+easyModeEl.addEventListener("change", (e) => {
+  easyMode = e.target.checked;
+});
+
+restartButtonSettingsEl.onclick = () => {
+  modalEl.style.display = "none";
+  initializeGame();
 }
 
 initializeGame();
