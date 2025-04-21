@@ -124,6 +124,7 @@ let weapon = null;
 let weaponChain = [];
 let canDrinkPotion = true;
 let currentRoom = [];
+let selectedCard = null;
 let canRun = true;
 let isGameOver = false;
 
@@ -258,7 +259,27 @@ function createCardElement(card) {
   const el = document.createElement("div");
   el.classList.add("card");
   el.classList.add(card.suit);
-  el.innerText = card.toCardFace();
+  // el.innerText = card.toCardFace();
+  el.style.background = `url('deck/${card.suit}-${card.value}.png') no-repeat center center`;
+  el.style.backgroundSize = "cover";
+
+  // add emphasis style if card is the selected card
+  if (selectedCard && selectedCard.suit === card.suit && selectedCard.value === card.value) {
+    switch (card.suit) {
+      case "spade":
+        el.classList.add("selected-monster");
+        break;
+      case "club":
+        el.classList.add("selected-monster");
+        break;
+      case "heart":
+        el.classList.add("selected-potion");
+        break;
+      case "diamond":
+        el.classList.add("selected-weapon");
+        break;
+    }
+  }
   return el;
 }
 
@@ -276,6 +297,8 @@ function createEmptyCardElement() {
 function showCardDescription(card) {
   if (!card) return;
   if (isGameOver) return;
+
+  selectedCard = card;
 
   const type = card.getType();
 
@@ -321,9 +344,13 @@ function showCardDescription(card) {
     // no secondary action
     cardSecondaryActionEl.style.display = "none";
   }
+
+  renderRoom();
 }
 
 function showMiscDescription(object) {
+  selectedCard = null;
+
   switch (object) {
     case "health":
       cardNameEl.textContent = "d20";
@@ -351,6 +378,8 @@ function showMiscDescription(object) {
   // hide actions
   cardPrimaryActionEl.style.display = "none";
   cardSecondaryActionEl.style.display = "none";
+
+  renderRoom();
 }
 
 
@@ -425,6 +454,7 @@ function equipWeapon(card) {
   weaponChain = [];
 
   dividerEl.style.display = "block";
+  selectedCard = null;
 
   log(`Equipped the ${card.getTitle()}.`);
   playCard(card);
@@ -480,11 +510,11 @@ function updateUI() {
 
   const color = getHealthGlowColor(health);
   healthEl.style.textShadow = `
-    0 0 10px ${color},
-    0 0 20px ${color},
+    0 0 30px ${color},
     0 0 30px ${color},
     0 0 40px ${color},
-    0 0 50px ${color}
+    0 0 60px ${color},
+    0 0 100px ${color}
   `;
 
   // update deck UI

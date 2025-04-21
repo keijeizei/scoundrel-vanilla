@@ -198,15 +198,15 @@ button:disabled {
 
 .card.heart { 
   color: red;
-  border: 1px solid #555;
+  /* border: 1px solid #555; */
 }
 .card.diamond {
   color: orange;
-  border: 1px solid #555;
+  /* border: 1px solid #555; */
 }
 .card.spade, .card.club {
   color: white;
-  border: 1px solid #555;
+  /* border: 1px solid #555; */
 }
 
 .card.empty {
@@ -222,6 +222,18 @@ button:disabled {
   box-sizing: border-box;
   border: 5px solid #666;
   box-shadow: 2px 2px 0 #555;
+}
+
+.card.selected-potion {
+  box-shadow: 0 0 2px rgba(255, 0, 0, 0.5), 0 0 20px rgba(255, 0, 0, 0.5);
+}
+
+.card.selected-weapon {
+  box-shadow: 0 0 2px rgba(255, 200, 0, 0.5), 0 0 20px rgba(255, 200, 0, 0.5);
+}
+
+.card.selected-monster {
+  box-shadow: 0 0 2px rgba(200, 200, 200, 0.5), 0 0 20px rgba(200, 200, 200, 0.5);
 }
 
 #log {
