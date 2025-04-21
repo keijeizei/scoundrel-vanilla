@@ -1,4 +1,4 @@
-// Classes
+/* CLASSES */
 class Card {
   constructor(suit, value) {
     this.suit = suit;
@@ -54,7 +54,7 @@ class Weapon extends Card {
   }
 }
 
-// Constants
+/* CONSTANTS */
 const suits = ["spade", "club", "heart", "diamond"];
 const faceValues = {
   11: "J",
@@ -86,8 +86,10 @@ const faceValuesNames = {
 const MAX_WEAPON_DURABILITY = 15;
 const MAX_HEALTH = 20;
 const BASE_MONSTERS = 26;
-const OVERLAP_MARGIN_MAP = [1, 1, 1, 1, -24, -36, -43, -48, -51, -53];
+const OVERLAP_MARGIN_MAP = [1, 1, 1, -1, -24, -36, -43, -48, -52, -55, -57, -59];
+const MAX_OVERLAP_MARGIN = -60;
 
+/* UI ELEMENTS */
 const healthEl = document.getElementById("health");
 const cardCounterEl = document.getElementById("card-counter");
 const promptEl = document.getElementById("prompt");
@@ -114,9 +116,10 @@ const restartButtonSettingsEl = document.getElementById("restart-button-settings
 const closeModalBtn = document.getElementById("close-modal-button");
 const modalEl = document.getElementById("modal-overlay");
 
+/* GAME SETTINGS */
 let easyMode = false;
 
-// Game state
+/* GAME STATE */
 let deck = [];
 let health = MAX_HEALTH;
 let remainingMonsters = BASE_MONSTERS;
@@ -128,7 +131,7 @@ let selectedCard = null;
 let canRun = true;
 let isGameOver = false;
 
-// Utility functions
+/* UTILITY FUNCTIONS */
 function capitalizeFirstLetter(str) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
@@ -138,7 +141,15 @@ function getHealthGlowColor(health) {
   return `hsl(${hue}, 100%, 50%)`;
 }
 
-// Debugging functions
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+  return array;
+}
+
+/* DEBUGGER FUNCTIONS */
 function overrideCurrentRoom() {
   currentRoom = [
     new Card("spade", 14),
@@ -147,7 +158,7 @@ function overrideCurrentRoom() {
     new Card("diamond", 10),
   ];
 
-  renderRoom();
+  updateRoomUI();
 }
 
 function overrideWeaponChain() {
@@ -167,14 +178,17 @@ function overrideWeaponChain() {
 }
 
 function increaseWeaponChain() {
-  weapon = new Weapon("spade", 10, true);
+  if (!weapon) {
+    weapon = new Weapon("diamond", 10, true);
+    equipWeapon(weapon);
+  }
 
-  weaponChain.push(new Card("diamond", 10));
+  weaponChain.push(new Card("spade", 10));
 
   updateUI();
 }
 
-// Game initialization
+/* INITIALIZATION FUNCTIONS */
 function initializeGame() {
   console.log("Easy mode:", easyMode);
 
@@ -201,6 +215,9 @@ function initializeGame() {
   updateUI();
 }
 
+/**
+ * Populates the deck with cards
+ */
 function buildDeck() {
   for (let i = 2; i <= 14; i++) {
     for (let suit of suits) {
@@ -216,44 +233,19 @@ function buildDeck() {
   deck = shuffle(deck);
 }
 
-function shuffle(array) {
-  for (let i = array.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [array[i], array[j]] = [array[j], array[i]];
-  }
-  return array;
-}
-
 /**
- * Draws the room cards from the deck and renders it
+ * Draws the room cards from the deck and calls the update function
  */
 function drawRoom() {
   currentRoom = deck.splice(0, 4);
 
-  renderRoom();
-}
-
-/**
- * Renders the cards in the current room
- */
-function renderRoom() {
-  roomEl.innerHTML = "";
-  currentRoom.forEach((card) => {
-    const el = createCardElement(card);
-    el.onclick = () => showCardDescription(card);
-    roomEl.appendChild(el);
-  });
-  const emptyCardCount = 4 - currentRoom.length;
-  for (let i = 0; i < emptyCardCount; i++) {
-    const emptyCard = createEmptyCardElement();
-    roomEl.appendChild(emptyCard);
-  }
+  updateRoomUI();
 }
 
 /**
  * Creates a card element with a suit and value
  * @param {Card} card
- * @returns card element
+ * @returns card HTML element
  */
 function createCardElement(card) {
   const el = document.createElement("div");
@@ -285,7 +277,7 @@ function createCardElement(card) {
 
 /**
  * Creates an empty card element
- * @returns card element
+ * @returns card HTML element
  */
 function createEmptyCardElement() {
   const el = document.createElement("div");
@@ -294,6 +286,10 @@ function createEmptyCardElement() {
   return el;
 }
 
+/**
+ * Displays the card description and actions based on the card type
+ * @param {Card} card
+ */
 function showCardDescription(card) {
   if (!card) return;
   if (isGameOver) return;
@@ -345,9 +341,13 @@ function showCardDescription(card) {
     cardSecondaryActionEl.style.display = "none";
   }
 
-  renderRoom();
+  updateRoomUI();
 }
 
+/**
+ * Displays the description of a miscellaneous object (health, deck, weapon)
+ * @param {string} object - The object to show the description for
+ */
 function showMiscDescription(object) {
   selectedCard = null;
 
@@ -379,11 +379,10 @@ function showMiscDescription(object) {
   cardPrimaryActionEl.style.display = "none";
   cardSecondaryActionEl.style.display = "none";
 
-  renderRoom();
+  updateRoomUI();
 }
 
-
-// Player actions
+/* PLAYER ACTIONS */
 function fightMonster(card, isBarehanded) {
   if (isGameOver) return;
   if (!card) return;
@@ -476,6 +475,11 @@ function drinkPotion(card) {
   playCard(card);
 }
 
+/**
+ * Completes the action of playing a card after the action is done
+ * @param {Card} card the card to play
+ * @returns 
+ */
 function playCard(card) {
   if (isGameOver) return;
   if (!card) return;
@@ -484,7 +488,8 @@ function playCard(card) {
     (roomCard) => roomCard.suit === card.suit && roomCard.value === card.value
   );
   currentRoom.splice(index, 1);
-  // cannot run after playing a card
+
+  // disable Run action after playing a card
   canRun = false;
 
   cardDetails.style.display = "none";
@@ -494,6 +499,11 @@ function playCard(card) {
   checkIfRoomFinished();
 }
 
+/**
+ * Takes damage from the player and checks if the player is dead
+ * @param {number} amount - The amount of damage to take
+ * @return {boolean} - Returns true if the player survived, false if dead
+ */
 function takeDamage(amount) {
   health -= amount;
   if (health <= 0) {
@@ -504,10 +514,20 @@ function takeDamage(amount) {
   return true;
 }
 
+/* UI FUNCTIONS */
 function updateUI() {
-  // update health UI
-  healthEl.textContent = health;
+  updateHealthUI();
+  updateDeckUI();
+  updateWeaponUI();
 
+  updateRoomUI();
+}
+
+/**
+ * Updates the health UI with the current health value
+ */
+function updateHealthUI() {
+  healthEl.textContent = health;
   const color = getHealthGlowColor(health);
   healthEl.style.textShadow = `
     0 0 30px ${color},
@@ -516,15 +536,23 @@ function updateUI() {
     0 0 60px ${color},
     0 0 100px ${color}
   `;
+}
 
-  // update deck UI
+/**
+ * Updates the deck UI with the current number of cards in the deck
+ */
+function updateDeckUI() {
   cardCounterEl.textContent = `${deck.length}`;
   if (deck.length === 0) {
     cardCounterEl.classList.remove("back");
     cardCounterEl.classList.add("empty");
   }
+}
 
-  // update weapon UI
+/**
+ * Updates the weapon UI with the current weapon and its chain of monsters
+ */
+function updateWeaponUI() {
   weaponEl.innerHTML = "";
   weaponMonstersEl.innerHTML = "";
 
@@ -539,19 +567,47 @@ function updateUI() {
     weaponChain.forEach((monster, index) => {
       const mCard = createCardElement(monster);
 
+      // compress the cards depending on the number of cards in the chain
       let overlapMargin = 0;
       if (index !== 0) {
-        overlapMargin = OVERLAP_MARGIN_MAP[weaponChain.length] || -60;
+        overlapMargin = OVERLAP_MARGIN_MAP[weaponChain.length] || MAX_OVERLAP_MARGIN;
       }
-      console.log(overlapMargin);
       mCard.style.marginLeft = `${overlapMargin}px`;
+
       weaponMonstersEl.appendChild(mCard);
     });
   } else {
     weaponMonstersEl.style.display = "none";
   }
+}
 
-  renderRoom();
+/**
+ * Updates the cards in the current room
+ */
+function updateRoomUI() {
+  roomEl.innerHTML = "";
+  currentRoom.forEach((card) => {
+    const el = createCardElement(card);
+    el.onclick = () => showCardDescription(card);
+    roomEl.appendChild(el);
+  });
+  const emptyCardCount = 4 - currentRoom.length;
+  for (let i = 0; i < emptyCardCount; i++) {
+    const emptyCard = createEmptyCardElement();
+    roomEl.appendChild(emptyCard);
+  }
+}
+
+function log(message) {
+  logEl.textContent = `${message}\n${logEl.textContent}`;
+}
+
+/* GAME CHECKER FUNCTIONS */
+function checkIfPlayerWon() {
+  if (remainingMonsters <= 0) {
+    log("You defeated all monsters! You win!");
+    endGame(true);
+  }
 }
 
 function checkIfRoomFinished() {
@@ -560,20 +616,10 @@ function checkIfRoomFinished() {
     // bring the remaining card to the top of the deck so it can be drawn again
     deck.unshift(nextSeed);
     drawRoom();
+    updateDeckUI();
     canRun = true;
     canDrinkPotion = true;
     runBtn.disabled = false;
-  }
-}
-
-function log(message) {
-  logEl.textContent = `${message}\n${logEl.textContent}`;
-}
-
-function checkIfPlayerWon() {
-  if (remainingMonsters <= 0) {
-    log("You defeated all monsters! You win!");
-    endGame(true);
   }
 }
 
@@ -590,7 +636,7 @@ function endGame(didWin) {
   updateUI();
 }
 
-// Onclick functions
+/* EVENT LISTENERS */
 runBtn.onclick = () => {
   if (!canRun) {
     log("You can't run twice in a row or after you have selected a card!");
