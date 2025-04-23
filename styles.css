@@ -16,6 +16,12 @@ h2 {
   font-size: 1rem;
 }
 
+h3 {
+  margin: 24px 0 0 0;
+  font-size: 0.9rem;
+  font-weight: bolder;
+}
+
 h5 {
   margin: 0;
   font-size: 0.8rem;
@@ -28,6 +34,10 @@ h6 {
   font-size: 0.8rem;
   font-weight: lighter;
   color: #aaa;
+}
+
+ul {
+  padding: 0 0 0 20px;
 }
 
 button {
@@ -94,11 +104,12 @@ button:disabled {
 .labeled-container {
   display: flex;
   flex-direction: column;
+  text-align: center;
   gap: 5px;
   margin-bottom: 20px;
 }
 
-#room {
+.room {
   display: flex;
   justify-content: center;
   gap: 10px;
@@ -109,7 +120,7 @@ button:disabled {
   font-weight: bold;
 }
 
-#health {
+.health {
   width: 80px;
   height: 80px;
   display: flex;
@@ -249,17 +260,24 @@ button:disabled {
   gap: 10px;
 }
 
-#weapon-monsters {
+.weapon-monsters {
   display: flex;
   justify-content: center;
   gap: 10px;
 }
 
-#divider {
+.divider {
   display: none;
   height: 90px;
   width: 2px;
   background: #444;
+}
+
+.help {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: start;
 }
 
 /* Overlay */
