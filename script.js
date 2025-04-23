@@ -429,8 +429,8 @@ function fightMonster(card, isBarehanded) {
 
   remainingMonsters--;
 
-  checkIfPlayerWon();
   playCard(card);
+  checkIfPlayerWon();
 }
 
 function equipWeapon(card) {
