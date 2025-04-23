@@ -400,7 +400,6 @@ function fightMonster(card, isBarehanded) {
       log(`Fought the ${card.getTitle()} barehanded but did not survive.`);
       return;
     }
-    remainingMonsters--;
     log(`Fought the ${card.getTitle()} barehanded and took ${card.value} damage.`);
   } else {
     if (!weapon) {
@@ -409,20 +408,10 @@ function fightMonster(card, isBarehanded) {
     }
 
     if (weapon.durability <= card.value) {
-      const didSurvive = takeDamage(card.value);
-      if (!didSurvive) {
-        log(`Fought the ${card.getTitle()} barehanded but did not survive.`);
-        return;
-      }
-      remainingMonsters--;
-      log(
-        `Not enough durability! Fought barehanded and took ${card.value} damage.`
-      );
+      log("Not enough durability!");
       return;
     }
 
-    log(`Defeated the ${card.getTitle()}.`);
-    weaponChain.push(card);
     const excess = card.value - weapon.value;
     if (excess > 0) {
       const didSurvive = takeDamage(excess);
@@ -430,11 +419,15 @@ function fightMonster(card, isBarehanded) {
         log(`Fought the ${card.getTitle()} but did not survive.`);
         return;
       }
-      remainingMonsters--;
       log(`Defeated the ${card.getTitle()}, but took ${excess} excess damage.`);
+    } else {
+      log(`Defeated the ${card.getTitle()}.`);
     }
     weapon.durability = card.value;
+    weaponChain.push(card);
   }
+
+  remainingMonsters--;
 
   checkIfPlayerWon();
   playCard(card);
