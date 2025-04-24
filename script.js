@@ -54,6 +54,40 @@ class Weapon extends Card {
   }
 }
 
+/* STATE MANAGER */
+function createState(initialState = {}) {
+  const listeners = new Map();
+
+  const notify = (key, value) => {
+    if (listeners.has(key)) {
+      listeners.get(key).forEach(fn => fn(value));
+    }
+  };
+
+  const state = new Proxy({ ...initialState }, {
+    get(target, key) {
+      return target[key];
+    },
+    set(target, key, value) {
+      if (target[key] !== value) {
+        target[key] = value;
+        notify(key, value);
+      }
+      return true;
+    }
+  });
+
+  state.subscribe = function (key, callback) {
+    if (!listeners.has(key)) {
+      listeners.set(key, new Set());
+    }
+    listeners.get(key).add(callback);
+    return () => listeners.get(key).delete(callback);
+  };
+
+  return state;
+}
+
 /* CONSTANTS */
 const suits = ["spade", "club", "heart", "diamond"];
 const faceValues = {
@@ -120,16 +154,11 @@ const modalEl = document.getElementById("modal-overlay");
 let easyMode = false;
 
 /* GAME STATE */
-let deck = [];
-let health = MAX_HEALTH;
+const state = createState({})
+
 let remainingMonsters = BASE_MONSTERS;
-let weapon = null;
-let weaponChain = [];
 let canDrinkPotion = true;
-let currentRoom = [];
 let selectedCard = null;
-let canRun = true;
-let isGameOver = false;
 
 /* UTILITY FUNCTIONS */
 function capitalizeFirstLetter(str) {
@@ -157,14 +186,12 @@ function overrideCurrentRoom() {
     new Card("spade", 12),
     new Card("diamond", 10),
   ];
-
-  updateRoomUI();
 }
 
 function overrideWeaponChain() {
-  weapon = new Weapon("spade", 10, true);
+  state.weapon = new Weapon("spade", 10, true);
 
-  weaponChain = [
+  state.weaponChain = [
     new Card("spade", 14),
     new Card("club", 13),
     new Card("spade", 12),
@@ -173,19 +200,15 @@ function overrideWeaponChain() {
     new Card("diamond", 10),
     new Card("diamond", 10),
   ];
-
-  updateUI();
 }
 
 function increaseWeaponChain() {
-  if (!weapon) {
-    weapon = new Weapon("diamond", 10, true);
-    equipWeapon(weapon);
+  if (!state.weapon) {
+    state.weapon = new Weapon("diamond", 10, true);
+    equipWeapon(state.weapon);
   }
 
   weaponChain.push(new Card("spade", 10));
-
-  updateUI();
 }
 
 /* INITIALIZATION FUNCTIONS */
@@ -193,32 +216,28 @@ function initializeGame() {
   console.log("Easy mode:", easyMode);
 
   // game state
-  health = MAX_HEALTH;
+  state.health = MAX_HEALTH;
+  state.deck = [];
+  state.currentRoom = [];
+  state.weapon = null;
+  state.weaponChain = [];
+  state.logs = "";
+  state.canRun = true;
+  state.isGameOver = false;
+  state.didWin = null;
   remainingMonsters = BASE_MONSTERS;
-  weapon = null;
-  weaponChain = [];
   canDrinkPotion = true;
-  currentRoom = [];
-  canRun = true;
-  isGameOver = false;
-  deck = [];
-
-  // UI state
-  restartButtonEl.style.display = "none";
-  promptEl.textContent = "Interact with 3 cards in the room or Run to proceed. Click objects to inspect.";
-  logEl.textContent = "";
-  dividerEl.style.display = "none";
-  runBtn.disabled = false;
 
   buildDeck();
   drawRoom();
-  updateUI();
 }
 
 /**
  * Populates the deck with cards
  */
 function buildDeck() {
+  let deck = [];
+
   for (let i = 2; i <= 14; i++) {
     for (let suit of suits) {
       if (suit === "heart" && (i <= 10 || easyMode)) {
@@ -230,16 +249,15 @@ function buildDeck() {
       }
     }
   }
-  deck = shuffle(deck);
+  state.deck = shuffle(deck);
 }
 
 /**
  * Draws the room cards from the deck and calls the update function
  */
 function drawRoom() {
-  currentRoom = deck.splice(0, 4);
-
-  updateRoomUI();
+  state.currentRoom = state.deck.slice(0, 4);
+  state.deck = state.deck.slice(4);
 }
 
 /**
@@ -292,7 +310,7 @@ function createEmptyCardElement() {
  */
 function showCardDescription(card) {
   if (!card) return;
-  if (isGameOver) return;
+  if (state.isGameOver) return;
 
   selectedCard = card;
 
@@ -318,7 +336,7 @@ function showCardDescription(card) {
     cardSecondaryActionEl.onclick = () => fightMonster(card, false);
 
     // hide secondary action if weapon cannot be used
-    if (!weapon || weapon.durability <= card.value) {
+    if (!state.weapon || state.weapon.durability <= card.value) {
       cardSecondaryActionEl.style.display = "none";
     }
   } else if (type === "weapon") {
@@ -340,8 +358,6 @@ function showCardDescription(card) {
     // no secondary action
     cardSecondaryActionEl.style.display = "none";
   }
-
-  updateRoomUI();
 }
 
 /**
@@ -364,8 +380,8 @@ function showMiscDescription(object) {
         "The source of all cards. Cards are dealt in 'rooms', which are groups of 4 cards. Defeat all 26 monster cards to win.";
       break;
     case "weapon":
-      if (weapon) {
-        showCardDescription(weapon);
+      if (state.weapon) {
+        showCardDescription(state.weapon);
       } else {
         cardNameEl.textContent = "Empty weapon slot";
         cardTypeEl.textContent = "Slot";
@@ -378,13 +394,11 @@ function showMiscDescription(object) {
   // hide actions
   cardPrimaryActionEl.style.display = "none";
   cardSecondaryActionEl.style.display = "none";
-
-  updateRoomUI();
 }
 
 /* PLAYER ACTIONS */
 function fightMonster(card, isBarehanded) {
-  if (isGameOver) return;
+  if (state.isGameOver) return;
   if (!card) return;
 
   const type = card.getType();
@@ -402,17 +416,17 @@ function fightMonster(card, isBarehanded) {
     }
     log(`Fought the ${card.getTitle()} barehanded and took ${card.value} damage.`);
   } else {
-    if (!weapon) {
+    if (!state.weapon) {
       log("Please equip a weapon first.");
       return;
     }
 
-    if (weapon.durability <= card.value) {
+    if (state.weapon.durability <= card.value) {
       log("Not enough durability!");
       return;
     }
 
-    const excess = card.value - weapon.value;
+    const excess = card.value - state.weapon.value;
     if (excess > 0) {
       const didSurvive = takeDamage(excess);
       if (!didSurvive) {
@@ -423,8 +437,8 @@ function fightMonster(card, isBarehanded) {
     } else {
       log(`Defeated the ${card.getTitle()}.`);
     }
-    weapon.durability = card.value;
-    weaponChain.push(card);
+    state.weapon.durability = card.value;
+    state.weaponChain = [...state.weaponChain, card];
   }
 
   remainingMonsters--;
@@ -434,7 +448,7 @@ function fightMonster(card, isBarehanded) {
 }
 
 function equipWeapon(card) {
-  if (isGameOver) return;
+  if (state.isGameOver) return;
   if (!card) return;
 
   if (card.getType() !== "weapon") {
@@ -442,18 +456,17 @@ function equipWeapon(card) {
     return;
   }
 
-  weapon = new Weapon(card.suit, card.value, true);
-  weaponChain = [];
-
-  dividerEl.style.display = "block";
   selectedCard = null;
+
+  state.weapon = new Weapon(card.suit, card.value, true);
+  state.weaponChain = [];
 
   log(`Equipped the ${card.getTitle()}.`);
   playCard(card);
 }
 
 function drinkPotion(card) {
-  if (isGameOver) return;
+  if (state.isGameOver) return;
   if (!card) return;
 
   if (card.getType() !== "potion") {
@@ -461,8 +474,9 @@ function drinkPotion(card) {
     return;
   }
 
-  let restoredHealth = Math.min(card.value, 20 - health);
-  health = Math.min(20, health + card.value);
+  let restoredHealth = Math.min(card.value, 20 - state.health);
+  state.health = Math.min(20, state.health + card.value);
+
   canDrinkPotion = false;
   log(`Drank the ${card.getTitle()}, restored ${restoredHealth} health.`);
   playCard(card);
@@ -474,22 +488,32 @@ function drinkPotion(card) {
  * @returns 
  */
 function playCard(card) {
-  if (isGameOver) return;
+  if (state.isGameOver) return;
   if (!card) return;
 
-  const index = currentRoom.findIndex(
-    (roomCard) => roomCard.suit === card.suit && roomCard.value === card.value
+  state.currentRoom = state.currentRoom.filter(
+    (roomCard) => roomCard.suit !== card.suit || roomCard.value !== card.value
   );
-  currentRoom.splice(index, 1);
 
   // disable Run action after playing a card
-  canRun = false;
+  state.canRun = false;
 
   cardDetails.style.display = "none";
-  runBtn.disabled = true;
 
-  updateUI();
   checkIfRoomFinished();
+}
+
+function runAway() {
+  if (!state.canRun) {
+    log("You can't run twice in a row or after you have selected a card!");
+    return;
+  }
+
+  state.deck = [...state.deck, ...state.currentRoom];
+  state.canRun = false;
+  
+  drawRoom();
+  log("You ran from the room.");
 }
 
 /**
@@ -498,30 +522,21 @@ function playCard(card) {
  * @return {boolean} - Returns true if the player survived, false if dead
  */
 function takeDamage(amount) {
-  health -= amount;
-  if (health <= 0) {
-    health = 0;
+  state.health = Math.max(0, state.health - amount);
+  if (state.health === 0) {
     endGame(false);
     return false;
   }
   return true;
 }
 
-/* UI FUNCTIONS */
-function updateUI() {
-  updateHealthUI();
-  updateDeckUI();
-  updateWeaponUI();
-
-  updateRoomUI();
-}
-
+/* STATE SUBSCRIPTIONS */
 /**
  * Updates the health UI with the current health value
  */
-function updateHealthUI() {
-  healthEl.textContent = health;
-  const color = getHealthGlowColor(health);
+state.subscribe("health", (newHealth) => {
+  healthEl.textContent = newHealth;
+  const color = getHealthGlowColor(state.health);
   healthEl.style.textShadow = `
     0 0 30px ${color},
     0 0 30px ${color},
@@ -529,41 +544,66 @@ function updateHealthUI() {
     0 0 60px ${color},
     0 0 100px ${color}
   `;
-}
+});
 
-/**
- * Updates the deck UI with the current number of cards in the deck
- */
-function updateDeckUI() {
-  cardCounterEl.textContent = `${deck.length}`;
-  if (deck.length === 0) {
+state.subscribe("deck", (newDeck) => {
+  cardCounterEl.textContent = `${newDeck.length}`;
+
+  if (newDeck.length === 0) {
     cardCounterEl.classList.remove("back");
     cardCounterEl.classList.add("empty");
+  } else {
+    cardCounterEl.classList.remove("empty");
+    cardCounterEl.classList.add("back");
   }
-}
+});
+
+state.subscribe("currentRoom", (newRoom) => {
+  roomEl.innerHTML = "";
+
+  newRoom.forEach((card) => {
+    const el = createCardElement(card);
+    el.onclick = () => showCardDescription(card);
+    roomEl.appendChild(el);
+  });
+
+  const emptyCardCount = 4 - newRoom.length;
+  for (let i = 0; i < emptyCardCount; i++) {
+    const emptyCard = createEmptyCardElement();
+    roomEl.appendChild(emptyCard);
+  }
+});
 
 /**
- * Updates the weapon UI with the current weapon and its chain of monsters
+ * Updates the weapon UI with the current weapon
  */
-function updateWeaponUI() {
+state.subscribe("weapon", (newWeapon) => {
   weaponEl.innerHTML = "";
+
+  if (newWeapon) {
+    const weaponCard = createCardElement(newWeapon);
+    weaponEl.appendChild(weaponCard);
+
+    dividerEl.style.display = "block";
+  }
+});
+
+/**
+ * Updates the chain of monsters
+ */
+state.subscribe("weaponChain", (newWeaponChain) => {
   weaponMonstersEl.innerHTML = "";
 
-  if (weapon) {
-    const weaponCard = createCardElement(weapon);
-    weaponEl.appendChild(weaponCard);
-  }
-
-  if (weaponChain.length > 0) {
+  if (newWeaponChain.length > 0) {
     weaponMonstersEl.style.display = "flex";
 
-    weaponChain.forEach((monster, index) => {
+    newWeaponChain.forEach((monster, index) => {
       const mCard = createCardElement(monster);
 
       // compress the cards depending on the number of cards in the chain
       let overlapMargin = 0;
       if (index !== 0) {
-        overlapMargin = OVERLAP_MARGIN_MAP[weaponChain.length] || MAX_OVERLAP_MARGIN;
+        overlapMargin = OVERLAP_MARGIN_MAP[newWeaponChain.length] || MAX_OVERLAP_MARGIN;
       }
       mCard.style.marginLeft = `${overlapMargin}px`;
 
@@ -572,28 +612,39 @@ function updateWeaponUI() {
   } else {
     weaponMonstersEl.style.display = "none";
   }
-}
+});
 
-/**
- * Updates the cards in the current room
- */
-function updateRoomUI() {
-  roomEl.innerHTML = "";
-  currentRoom.forEach((card) => {
-    const el = createCardElement(card);
-    el.onclick = () => showCardDescription(card);
-    roomEl.appendChild(el);
-  });
-  const emptyCardCount = 4 - currentRoom.length;
-  for (let i = 0; i < emptyCardCount; i++) {
-    const emptyCard = createEmptyCardElement();
-    roomEl.appendChild(emptyCard);
+state.subscribe("canRun", (newCanRun) => {
+  runBtn.disabled = !newCanRun;
+  console.log("Can run:", newCanRun);
+  cardDetails.style.display = "none"; // should be side effect of selectedCard
+});
+
+state.subscribe("logs", (newLog) => {
+  logEl.textContent = newLog;
+});
+
+state.subscribe("isGameOver", (isGameOver) => {
+  if (isGameOver) {
+    cardDetails.style.display = "none";
+    restartButtonEl.style.display = "block";
+  } else {
+    cardDetails.style.display = "flex";
+    restartButtonEl.style.display = "none";
   }
-}
+});
 
-function log(message) {
-  logEl.textContent = `${message}\n${logEl.textContent}`;
-}
+state.subscribe("didWin", (didWin) => {
+  if (didWin) {
+    promptEl.textContent = "You win!";
+  } else {
+    if (state.isGameOver) {
+      promptEl.textContent = "You died.";
+    } else {
+      promptEl.textContent = "Interact with 3 cards in the room or Run to proceed. Click objects to inspect.";
+    }
+  }
+});
 
 /* GAME CHECKER FUNCTIONS */
 function checkIfPlayerWon() {
@@ -604,44 +655,30 @@ function checkIfPlayerWon() {
 }
 
 function checkIfRoomFinished() {
-  if (currentRoom.length === 1) {
-    const nextSeed = currentRoom[0];
+  if (state.currentRoom.length === 1) {
+    const lastCard = state.currentRoom[0];
     // bring the remaining card to the top of the deck so it can be drawn again
-    deck.unshift(nextSeed);
+    state.deck = [lastCard, ...state.deck];
+    state.canRun = true;
+
     drawRoom();
-    updateDeckUI();
-    canRun = true;
     canDrinkPotion = true;
-    runBtn.disabled = false;
   }
 }
 
 function endGame(didWin) {
-  if (didWin) {
-    promptEl.textContent = "You win!";
-  } else {
-    promptEl.textContent = "You died.";
-  }
-  cardDetails.style.display = "none";
-  runBtn.disabled = true;
-  restartButtonEl.style.display = "block";
-  isGameOver = true;
-  updateUI();
+  state.canRun = false;
+  state.isGameOver = true;
+  state.didWin = didWin;
+}
+
+function log(message) {
+  state.logs = `${message}\n${state.logs}`;
 }
 
 /* EVENT LISTENERS */
 runBtn.onclick = () => {
-  if (!canRun) {
-    log("You can't run twice in a row or after you have selected a card!");
-    return;
-  }
-  cardDetails.style.display = "none";
-  deck.push(...currentRoom);
-  drawRoom();
-  canRun = false;
-  runBtn.disabled = true;
-
-  log("You ran from the room.");
+  runAway();
 };
 
 restartButtonEl.onclick = () => {
