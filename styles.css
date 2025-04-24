@@ -1,3 +1,7 @@
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   font-family: Arial, sans-serif;
   background: #111;
@@ -116,7 +120,7 @@ button:disabled {
   flex-wrap: wrap;
 }
 
-#card-counter {
+.card-counter {
   font-weight: bold;
 }
 
