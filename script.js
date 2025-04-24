@@ -172,7 +172,7 @@ function capitalizeFirstLetter(str) {
 }
 
 function getHealthGlowColor(health) {
-  const hue = (health / 20) * 100;
+  const hue = (health / 20) * 120 - 20;
   return `hsl(${hue}, 100%, 50%)`;
 }
 
@@ -351,6 +351,7 @@ function fightMonster(card, isBarehanded) {
     return;
   }
 
+  state.selectedObject = null;
   if (isBarehanded) {
     const didSurvive = takeDamage(card.value);
     if (!didSurvive) {
@@ -418,6 +419,7 @@ function drinkPotion(card) {
     return;
   }
 
+  state.selectedObject = null;
   let restoredHealth = Math.min(card.value, 20 - state.health);
   state.health = Math.min(20, state.health + card.value);
 
@@ -441,8 +443,6 @@ function playCard(card) {
 
   // disable Run action after playing a card
   state.canRun = false;
-
-  cardDetails.style.display = "none";
 
   checkIfRoomFinished();
 }
@@ -497,15 +497,36 @@ function updateRoomUI(newRoom) {
  * Updates the health UI with the current health value
  */
 state.subscribe("health", (newHealth) => {
-  healthEl.textContent = newHealth;
+  let currentHealth = parseInt(healthEl.textContent) || 0;
+  const healthDifference = newHealth - currentHealth;
+  const step = healthDifference > 0 ? 1 : -1;
+
+  // animate the health change
+  const animationDuration = 800;
+  const delay = animationDuration / Math.abs(healthDifference);
+  const interval = setInterval(() => {
+    if (currentHealth !== newHealth) {
+      currentHealth += step;
+      healthEl.textContent = currentHealth;
+    } else {
+      clearInterval(interval);
+    }
+  }, delay);
+
   const color = getHealthGlowColor(state.health);
-  healthEl.style.textShadow = `
-    0 0 30px ${color},
+  const glowStyle = `
     0 0 30px ${color},
     0 0 40px ${color},
     0 0 60px ${color},
     0 0 100px ${color}
   `;
+
+  // Apply a stronger glow effect if health is below 10
+  if (newHealth < 10) {
+    healthEl.style.textShadow = `${glowStyle}, ${glowStyle}`;
+  } else {
+    healthEl.style.textShadow = glowStyle;
+  }
 });
 
 state.subscribe("deck", (newDeck) => {
