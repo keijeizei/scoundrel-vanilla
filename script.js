@@ -60,22 +60,25 @@ function createState(initialState = {}) {
 
   const notify = (key, value) => {
     if (listeners.has(key)) {
-      listeners.get(key).forEach(fn => fn(value));
+      listeners.get(key).forEach((fn) => fn(value));
     }
   };
 
-  const state = new Proxy({ ...initialState }, {
-    get(target, key) {
-      return target[key];
-    },
-    set(target, key, value) {
-      if (target[key] !== value) {
-        target[key] = value;
-        notify(key, value);
-      }
-      return true;
+  const state = new Proxy(
+    { ...initialState },
+    {
+      get(target, key) {
+        return target[key];
+      },
+      set(target, key, value) {
+        if (target[key] !== value) {
+          target[key] = value;
+          notify(key, value);
+        }
+        return true;
+      },
     }
-  });
+  );
 
   state.subscribe = function (key, callback) {
     if (!listeners.has(key)) {
@@ -120,7 +123,9 @@ const faceValuesNames = {
 const MAX_WEAPON_DURABILITY = 15;
 const MAX_HEALTH = 20;
 const BASE_MONSTERS = 26;
-const OVERLAP_MARGIN_MAP = [1, 1, 1, -1, -24, -36, -43, -48, -52, -55, -57, -59];
+const OVERLAP_MARGIN_MAP = [
+  1, 1, 1, -1, -24, -36, -43, -48, -52, -55, -57, -59,
+];
 const MAX_OVERLAP_MARGIN = -60;
 
 /* UI ELEMENTS */
@@ -146,7 +151,9 @@ const runBtn = document.getElementById("run-button");
 
 const settingsBtn = document.getElementById("settings");
 const easyModeEl = document.getElementById("easy-mode-toggle");
-const restartButtonSettingsEl = document.getElementById("restart-button-settings");
+const restartButtonSettingsEl = document.getElementById(
+  "restart-button-settings"
+);
 const closeModalBtn = document.getElementById("close-modal-button");
 const modalEl = document.getElementById("modal-overlay");
 
@@ -154,11 +161,10 @@ const modalEl = document.getElementById("modal-overlay");
 let easyMode = false;
 
 /* GAME STATE */
-const state = createState({})
+const state = createState({});
 
 let remainingMonsters = BASE_MONSTERS;
 let canDrinkPotion = true;
-let selectedCard = null;
 
 /* UTILITY FUNCTIONS */
 function capitalizeFirstLetter(str) {
@@ -225,6 +231,7 @@ function initializeGame() {
   state.canRun = true;
   state.isGameOver = false;
   state.didWin = null;
+  state.selectedObject = null;
   remainingMonsters = BASE_MONSTERS;
   canDrinkPotion = true;
 
@@ -274,7 +281,13 @@ function createCardElement(card) {
   el.style.backgroundSize = "cover";
 
   // add emphasis style if card is the selected card
-  if (selectedCard && selectedCard.suit === card.suit && selectedCard.value === card.value) {
+  const isCardSelected =
+    state.selectedObject &&
+    state.selectedObject instanceof Card &&
+    state.selectedObject.suit === card.suit &&
+    state.selectedObject.value === card.value;
+
+  if (isCardSelected) {
     switch (card.suit) {
       case "spade":
         el.classList.add("selected-monster");
@@ -312,52 +325,7 @@ function showCardDescription(card) {
   if (!card) return;
   if (state.isGameOver) return;
 
-  selectedCard = card;
-
-  const type = card.getType();
-
-  // reset actions visibility
-  cardPrimaryActionEl.style.display = "block";
-  cardSecondaryActionEl.style.display = "block";
-  cardPrimaryActionEl.classList.remove("red", "green", "orange");
-  cardSecondaryActionEl.classList.remove("red", "green", "orange");
-  
-  cardNameEl.textContent = card.getTitle();
-  cardTypeEl.textContent = capitalizeFirstLetter(card.getType());
-  cardDescriptionEl.textContent = card.getDescription();
-  cardDetails.style.display = "flex";
-
-  if (type === "monster") {
-    cardPrimaryActionEl.textContent = "Fight barehanded";
-    cardPrimaryActionEl.classList.add("orange");
-    cardPrimaryActionEl.onclick = () => fightMonster(card, true);
-    cardSecondaryActionEl.textContent = "Fight with weapon";
-    cardSecondaryActionEl.classList.add("green");
-    cardSecondaryActionEl.onclick = () => fightMonster(card, false);
-
-    // hide secondary action if weapon cannot be used
-    if (!state.weapon || state.weapon.durability <= card.value) {
-      cardSecondaryActionEl.style.display = "none";
-    }
-  } else if (type === "weapon") {
-    cardPrimaryActionEl.textContent = "Equip";
-    cardPrimaryActionEl.classList.add("green");
-    cardPrimaryActionEl.onclick = () => equipWeapon(card);
-
-    // hide action if weapon is already equipped
-    if (card.isEquipped) {
-      cardPrimaryActionEl.style.display = "none";
-    }
-    // no secondary action
-    cardSecondaryActionEl.style.display = "none";
-  } else if (type === "potion") {
-    cardPrimaryActionEl.textContent = canDrinkPotion ? "Drink" : "Drink (no effect)";
-    cardPrimaryActionEl.classList.add(canDrinkPotion ? "green" : "red");
-    cardPrimaryActionEl.onclick = () => drinkPotion(card);
-
-    // no secondary action
-    cardSecondaryActionEl.style.display = "none";
-  }
+  state.selectedObject = card;
 }
 
 /**
@@ -365,35 +333,10 @@ function showCardDescription(card) {
  * @param {string} object - The object to show the description for
  */
 function showMiscDescription(object) {
-  selectedCard = null;
+  if (!object) return;
+  if (state.isGameOver) return;
 
-  switch (object) {
-    case "health":
-      cardNameEl.textContent = "d20";
-      cardTypeEl.textContent = "Health";
-      cardDescriptionEl.textContent = "A 20-sided die. Shows your health points. Capped at 20.";
-      break;
-    case "deck":
-      cardNameEl.textContent = "Deck of cards";
-      cardTypeEl.textContent = "Dungeon";
-      cardDescriptionEl.textContent =
-        "The source of all cards. Cards are dealt in 'rooms', which are groups of 4 cards. Defeat all 26 monster cards to win.";
-      break;
-    case "weapon":
-      if (state.weapon) {
-        showCardDescription(state.weapon);
-      } else {
-        cardNameEl.textContent = "Empty weapon slot";
-        cardTypeEl.textContent = "Slot";
-        cardDescriptionEl.textContent = "Equip a Diamond card as a weapon to fight monsters more effectively.";
-      }
-      break;
-  }
-
-  cardDetails.style.display = "flex";
-  // hide actions
-  cardPrimaryActionEl.style.display = "none";
-  cardSecondaryActionEl.style.display = "none";
+  state.selectedObject = object;
 }
 
 /* PLAYER ACTIONS */
@@ -414,7 +357,9 @@ function fightMonster(card, isBarehanded) {
       log(`Fought the ${card.getTitle()} barehanded but did not survive.`);
       return;
     }
-    log(`Fought the ${card.getTitle()} barehanded and took ${card.value} damage.`);
+    log(
+      `Fought the ${card.getTitle()} barehanded and took ${card.value} damage.`
+    );
   } else {
     if (!state.weapon) {
       log("Please equip a weapon first.");
@@ -456,8 +401,7 @@ function equipWeapon(card) {
     return;
   }
 
-  selectedCard = null;
-
+  state.selectedCard = null;
   state.weapon = new Weapon(card.suit, card.value, true);
   state.weaponChain = [];
 
@@ -485,7 +429,7 @@ function drinkPotion(card) {
 /**
  * Completes the action of playing a card after the action is done
  * @param {Card} card the card to play
- * @returns 
+ * @returns
  */
 function playCard(card) {
   if (state.isGameOver) return;
@@ -511,7 +455,8 @@ function runAway() {
 
   state.deck = [...state.deck, ...state.currentRoom];
   state.canRun = false;
-  
+  state.selectedObject = null;
+
   drawRoom();
   log("You ran from the room.");
 }
@@ -528,6 +473,23 @@ function takeDamage(amount) {
     return false;
   }
   return true;
+}
+
+/* UI FUNCTIONS */
+function updateRoomUI(newRoom) {
+  roomEl.innerHTML = "";
+
+  newRoom.forEach((card) => {
+    const el = createCardElement(card);
+    el.onclick = () => showCardDescription(card);
+    roomEl.appendChild(el);
+  });
+
+  const emptyCardCount = 4 - newRoom.length;
+  for (let i = 0; i < emptyCardCount; i++) {
+    const emptyCard = createEmptyCardElement();
+    roomEl.appendChild(emptyCard);
+  }
 }
 
 /* STATE SUBSCRIPTIONS */
@@ -559,19 +521,7 @@ state.subscribe("deck", (newDeck) => {
 });
 
 state.subscribe("currentRoom", (newRoom) => {
-  roomEl.innerHTML = "";
-
-  newRoom.forEach((card) => {
-    const el = createCardElement(card);
-    el.onclick = () => showCardDescription(card);
-    roomEl.appendChild(el);
-  });
-
-  const emptyCardCount = 4 - newRoom.length;
-  for (let i = 0; i < emptyCardCount; i++) {
-    const emptyCard = createEmptyCardElement();
-    roomEl.appendChild(emptyCard);
-  }
+  updateRoomUI(newRoom);
 });
 
 /**
@@ -603,7 +553,8 @@ state.subscribe("weaponChain", (newWeaponChain) => {
       // compress the cards depending on the number of cards in the chain
       let overlapMargin = 0;
       if (index !== 0) {
-        overlapMargin = OVERLAP_MARGIN_MAP[newWeaponChain.length] || MAX_OVERLAP_MARGIN;
+        overlapMargin =
+          OVERLAP_MARGIN_MAP[newWeaponChain.length] || MAX_OVERLAP_MARGIN;
       }
       mCard.style.marginLeft = `${overlapMargin}px`;
 
@@ -614,10 +565,102 @@ state.subscribe("weaponChain", (newWeaponChain) => {
   }
 });
 
+state.subscribe("selectedObject", (newSelectedObject) => {
+  if (newSelectedObject) {
+    cardDetails.style.display = "flex";
+
+    if (newSelectedObject instanceof Card) {
+      updateRoomUI(state.currentRoom);
+
+      const type = newSelectedObject.getType();
+
+      // reset actions visibility
+      cardPrimaryActionEl.style.display = "block";
+      cardSecondaryActionEl.style.display = "block";
+      cardPrimaryActionEl.classList.remove("red", "green", "orange");
+      cardSecondaryActionEl.classList.remove("red", "green", "orange");
+
+      cardNameEl.textContent = newSelectedObject.getTitle();
+      cardTypeEl.textContent = capitalizeFirstLetter(
+        newSelectedObject.getType()
+      );
+      cardDescriptionEl.textContent = newSelectedObject.getDescription();
+
+      if (type === "monster") {
+        cardPrimaryActionEl.textContent = "Fight barehanded";
+        cardPrimaryActionEl.classList.add("orange");
+        cardPrimaryActionEl.onclick = () =>
+          fightMonster(newSelectedObject, true);
+        cardSecondaryActionEl.textContent = "Fight with weapon";
+        cardSecondaryActionEl.classList.add("green");
+        cardSecondaryActionEl.onclick = () =>
+          fightMonster(newSelectedObject, false);
+
+        // hide secondary action if weapon cannot be used
+        if (
+          !state.weapon ||
+          state.weapon.durability <= newSelectedObject.value
+        ) {
+          cardSecondaryActionEl.style.display = "none";
+        }
+      } else if (type === "weapon") {
+        cardPrimaryActionEl.textContent = "Equip";
+        cardPrimaryActionEl.classList.add("green");
+        cardPrimaryActionEl.onclick = () => equipWeapon(newSelectedObject);
+
+        // hide action if weapon is already equipped
+        if (newSelectedObject.isEquipped) {
+          cardPrimaryActionEl.style.display = "none";
+        }
+        // no secondary action
+        cardSecondaryActionEl.style.display = "none";
+      } else if (type === "potion") {
+        cardPrimaryActionEl.textContent = canDrinkPotion
+          ? "Drink"
+          : "Drink (no effect)";
+        cardPrimaryActionEl.classList.add(canDrinkPotion ? "green" : "red");
+        cardPrimaryActionEl.onclick = () => drinkPotion(newSelectedObject);
+
+        // no secondary action
+        cardSecondaryActionEl.style.display = "none";
+      }
+    } else {
+      // show description for health, deck or equipped weapon
+      switch (newSelectedObject) {
+        case "health":
+          cardNameEl.textContent = "d20";
+          cardTypeEl.textContent = "Health";
+          cardDescriptionEl.textContent =
+            "A 20-sided die. Shows your health points. Capped at 20.";
+          break;
+        case "deck":
+          cardNameEl.textContent = "Deck of cards";
+          cardTypeEl.textContent = "Dungeon";
+          cardDescriptionEl.textContent =
+            "The source of all cards. Cards are dealt in 'rooms', which are groups of 4 cards. Defeat all 26 monster cards to win.";
+          break;
+        case "weapon":
+          if (state.weapon) {
+            showCardDescription(state.weapon);
+          } else {
+            cardNameEl.textContent = "Empty weapon slot";
+            cardTypeEl.textContent = "Slot";
+            cardDescriptionEl.textContent =
+              "Equip a Diamond card as a weapon to fight monsters more effectively.";
+          }
+          break;
+      }
+      // hide actions
+      cardPrimaryActionEl.style.display = "none";
+      cardSecondaryActionEl.style.display = "none";
+    }
+  } else {
+    cardDetails.style.display = "none";
+  }
+});
+
 state.subscribe("canRun", (newCanRun) => {
   runBtn.disabled = !newCanRun;
-  console.log("Can run:", newCanRun);
-  cardDetails.style.display = "none"; // should be side effect of selectedCard
 });
 
 state.subscribe("logs", (newLog) => {
@@ -626,10 +669,8 @@ state.subscribe("logs", (newLog) => {
 
 state.subscribe("isGameOver", (isGameOver) => {
   if (isGameOver) {
-    cardDetails.style.display = "none";
     restartButtonEl.style.display = "block";
   } else {
-    cardDetails.style.display = "flex";
     restartButtonEl.style.display = "none";
   }
 });
@@ -641,7 +682,8 @@ state.subscribe("didWin", (didWin) => {
     if (state.isGameOver) {
       promptEl.textContent = "You died.";
     } else {
-      promptEl.textContent = "Interact with 3 cards in the room or Run to proceed. Click objects to inspect.";
+      promptEl.textContent =
+        "Interact with 3 cards in the room or Run to proceed. Click objects to inspect.";
     }
   }
 });
@@ -669,6 +711,7 @@ function checkIfRoomFinished() {
 function endGame(didWin) {
   state.canRun = false;
   state.isGameOver = true;
+  state.selectedObject = null;
   state.didWin = didWin;
 }
 
@@ -683,27 +726,27 @@ runBtn.onclick = () => {
 
 restartButtonEl.onclick = () => {
   initializeGame();
-}
+};
 
 healthEl.onclick = () => {
   showMiscDescription("health");
-}
+};
 
 cardCounterEl.onclick = () => {
   showMiscDescription("deck");
-}
+};
 
 weaponEl.onclick = () => {
   showMiscDescription("weapon");
-}
+};
 
 closeModalBtn.onclick = () => {
   modalEl.style.display = "none";
-}
+};
 
 settingsBtn.onclick = () => {
   modalEl.style.display = "flex";
-}
+};
 
 easyModeEl.addEventListener("change", (e) => {
   easyMode = e.target.checked;
@@ -712,6 +755,6 @@ easyModeEl.addEventListener("change", (e) => {
 restartButtonSettingsEl.onclick = () => {
   modalEl.style.display = "none";
   initializeGame();
-}
+};
 
 initializeGame();
