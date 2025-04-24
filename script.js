@@ -535,6 +535,8 @@ state.subscribe("weapon", (newWeapon) => {
     weaponEl.appendChild(weaponCard);
 
     dividerEl.style.display = "block";
+  } else {
+    dividerEl.style.display = "none";
   }
 });
 
