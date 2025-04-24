@@ -19,7 +19,7 @@ class Card {
           this.value + 1
         } durability to be used. Reduces weapon durability to ${this.value}.`;
       case "diamond":
-        return `Weapon with ${this.value} attack. Durability will be reduced when used with a monster.`;
+        return `Deals ${this.value} attack to a monster. Durability will be reduced when used with a monster.`;
       case "heart":
         return `Restores up to ${this.value} health. Potions can only be used once per room.`;
     }
@@ -277,7 +277,7 @@ function createCardElement(card) {
   el.classList.add("card");
   el.classList.add(card.suit);
   // el.innerText = card.toCardFace();
-  el.style.background = `url('deck/${card.suit}-${card.value}.png') no-repeat center center`;
+  el.style.background = `url('assets/deck/${card.suit}-${card.value}.png') no-repeat center center`;
   el.style.backgroundSize = "cover";
 
   // add emphasis style if card is the selected card
@@ -358,7 +358,7 @@ function fightMonster(card, isBarehanded) {
       return;
     }
     log(
-      `Fought the ${card.getTitle()} barehanded and took ${card.value} damage.`
+      `Defeated the ${card.getTitle()} barehanded and took ${card.value} damage.`
     );
   } else {
     if (!state.weapon) {
@@ -401,7 +401,7 @@ function equipWeapon(card) {
     return;
   }
 
-  state.selectedCard = null;
+  state.selectedObject = null;
   state.weapon = new Weapon(card.suit, card.value, true);
   state.weaponChain = [];
 

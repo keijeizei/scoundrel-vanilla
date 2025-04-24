@@ -62,6 +62,12 @@ button:disabled {
   cursor: not-allowed;
 }
 
+hr {
+  border: none;
+  height: 1px;
+  background: #444;
+}
+
 /* Colors */
 .green {
   background: #28a745;
@@ -135,7 +141,7 @@ button:disabled {
   text-align: center;
   cursor: pointer;
 
-  background-image: url('d20.png');
+  background-image: url('assets/d20.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -252,7 +258,7 @@ button:disabled {
 }
 
 #log {
-  margin-top: 20px;
+  margin: 48px 0;
   font-size: 0.9rem;
   min-height: 40px;
   white-space: pre-wrap;
@@ -282,6 +288,7 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   text-align: start;
+  margin-top: 32px
 }
 
 /* Overlay */
