@@ -195,16 +195,16 @@ function overrideCurrentRoom() {
 }
 
 function overrideWeaponChain() {
-  state.weapon = new Weapon("spade", 10, true);
+  state.weapon = new Weapon("diamond", 10, true);
 
   state.weaponChain = [
-    new Card("spade", 14),
-    new Card("club", 13),
-    new Card("spade", 12),
-    new Card("diamond", 10),
-    new Card("diamond", 10),
-    new Card("diamond", 10),
-    new Card("diamond", 10),
+    new Card("club", 2),
+    new Card("club", 3),
+    new Card("club", 4),
+    new Card("club", 5),
+    new Card("club", 6),
+    new Card("club", 7),
+    new Card("club", 8),
   ];
 }
 
@@ -359,7 +359,9 @@ function fightMonster(card, isBarehanded) {
       return;
     }
     log(
-      `Defeated the ${card.getTitle()} barehanded and took ${card.value} damage.`
+      `Defeated the ${card.getTitle()} barehanded and took ${
+        card.value
+      } damage.`
     );
   } else {
     if (!state.weapon) {
@@ -503,7 +505,7 @@ state.subscribe("health", (newHealth) => {
 
   // animate the health change
   const animationDuration = 800;
-  const delay = animationDuration / Math.abs(healthDifference);
+  const delay = Math.min(100, animationDuration / Math.abs(healthDifference));
   const interval = setInterval(() => {
     if (currentHealth !== newHealth) {
       currentHealth += step;
