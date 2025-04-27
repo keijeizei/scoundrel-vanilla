@@ -54,6 +54,16 @@ class Weapon extends Card {
   }
 }
 
+class DeadMonster extends Card {
+  constructor(suit, value) {
+    super(suit, value);
+  }
+
+  getType() {
+    return "dead monster";
+  }
+}
+
 /* STATE MANAGER */
 function createState(initialState = {}) {
   const listeners = new Map();
@@ -302,7 +312,10 @@ function fightMonster(card, isBarehanded) {
       log(`Defeated the ${card.getTitle()}.`);
     }
     state.weapon.durability = card.value;
-    state.weaponChain = [...state.weaponChain, card];
+    state.weaponChain = [
+      ...state.weaponChain,
+      new DeadMonster(card.suit, card.value, false),
+    ];
   }
 
   remainingMonsters--;
@@ -591,6 +604,7 @@ state.subscribe("selectedObject", (newSelectedObject) => {
   if (newSelectedObject) {
     updateRoomUI();
     updateWeaponUI();
+    updateWeaponChainUI();
 
     cardDetails.style.display = "flex";
 
@@ -626,6 +640,10 @@ state.subscribe("selectedObject", (newSelectedObject) => {
         ) {
           cardSecondaryActionEl.style.display = "none";
         }
+      } else if (type === "dead monster") {
+        // hide actions if monster is already dead
+        cardPrimaryActionEl.style.display = "none";
+        cardSecondaryActionEl.style.display = "none";
       } else if (type === "weapon") {
         cardPrimaryActionEl.textContent = "Equip";
         cardPrimaryActionEl.classList.add("green");
