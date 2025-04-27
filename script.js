@@ -151,6 +151,8 @@ const runBtn = document.getElementById("run-button");
 
 const settingsBtn = document.getElementById("settings");
 const easyModeEl = document.getElementById("easy-mode-toggle");
+const textOnlyEl = document.getElementById("text-only-toggle");
+
 const restartButtonSettingsEl = document.getElementById(
   "restart-button-settings"
 );
@@ -159,7 +161,9 @@ const modalEl = document.getElementById("modal-overlay");
 
 /* GAME SETTINGS */
 let easyMode = false;
-let textOnlyCards = false;
+
+const settings = createState({});
+settings.textOnlyCards = false;
 
 /* GAME STATE */
 const state = createState({});
@@ -404,22 +408,58 @@ function takeDamage(amount) {
  * Updates the room UI with the current room cards.
  * Clears the room element and populates it with card elements based on the new room state.
  * If the room has fewer than 4 cards, empty card elements are added to fill the space.
- *
- * @param {Card[]} newRoom - An array of Card objects representing the current room.
  */
-function updateRoomUI(newRoom) {
+function updateRoomUI() {
   roomEl.innerHTML = "";
 
-  newRoom.forEach((card) => {
+  state.currentRoom.forEach((card) => {
     const el = createCardElement(card);
     el.onclick = () => selectObject(card);
     roomEl.appendChild(el);
   });
 
-  const emptyCardCount = 4 - newRoom.length;
+  const emptyCardCount = 4 - state.currentRoom.length;
   for (let i = 0; i < emptyCardCount; i++) {
     const emptyCard = createEmptyCardElement();
     roomEl.appendChild(emptyCard);
+  }
+}
+
+function updateWeaponChainUI() {
+  weaponMonstersEl.innerHTML = "";
+
+  if (state.weaponChain.length > 0) {
+    weaponMonstersEl.style.display = "flex";
+
+    state.weaponChain.forEach((monster, index) => {
+      const mCard = createCardElement(monster);
+      mCard.onclick = () => selectObject(monster);
+
+      // compress the cards depending on the number of cards in the chain
+      let overlapMargin = 0;
+      if (index !== 0) {
+        overlapMargin =
+          OVERLAP_MARGIN_MAP[state.weaponChain.length] || MAX_OVERLAP_MARGIN;
+      }
+      mCard.style.marginLeft = `${overlapMargin}px`;
+
+      weaponMonstersEl.appendChild(mCard);
+    });
+  } else {
+    weaponMonstersEl.style.display = "none";
+  }
+}
+
+function updateWeaponUI() {
+  weaponEl.innerHTML = "";
+
+  if (state.weapon) {
+    const weaponCard = createCardElement(state.weapon);
+    weaponEl.appendChild(weaponCard);
+
+    dividerEl.style.display = "block";
+  } else {
+    dividerEl.style.display = "none";
   }
 }
 
@@ -432,7 +472,7 @@ function createCardElement(card) {
   const el = document.createElement("div");
   el.classList.add("card");
 
-  if (textOnlyCards) {
+  if (settings.textOnlyCards) {
     el.innerText = card.toCardFace();
     el.classList.add(card.suit);
   } else {
@@ -526,51 +566,22 @@ state.subscribe("deck", (newDeck) => {
   }
 });
 
-state.subscribe("currentRoom", (newRoom) => {
-  updateRoomUI(newRoom);
+state.subscribe("currentRoom", () => {
+  updateRoomUI();
 });
 
 /**
  * Updates the weapon UI with the current weapon
  */
-state.subscribe("weapon", (newWeapon) => {
-  weaponEl.innerHTML = "";
-
-  if (newWeapon) {
-    const weaponCard = createCardElement(newWeapon);
-    weaponEl.appendChild(weaponCard);
-
-    dividerEl.style.display = "block";
-  } else {
-    dividerEl.style.display = "none";
-  }
+state.subscribe("weapon", () => {
+  updateWeaponUI();
 });
 
 /**
  * Updates the chain of monsters
  */
-state.subscribe("weaponChain", (newWeaponChain) => {
-  weaponMonstersEl.innerHTML = "";
-
-  if (newWeaponChain.length > 0) {
-    weaponMonstersEl.style.display = "flex";
-
-    newWeaponChain.forEach((monster, index) => {
-      const mCard = createCardElement(monster);
-
-      // compress the cards depending on the number of cards in the chain
-      let overlapMargin = 0;
-      if (index !== 0) {
-        overlapMargin =
-          OVERLAP_MARGIN_MAP[newWeaponChain.length] || MAX_OVERLAP_MARGIN;
-      }
-      mCard.style.marginLeft = `${overlapMargin}px`;
-
-      weaponMonstersEl.appendChild(mCard);
-    });
-  } else {
-    weaponMonstersEl.style.display = "none";
-  }
+state.subscribe("weaponChain", () => {
+  updateWeaponChainUI();
 });
 
 /**
@@ -578,7 +589,8 @@ state.subscribe("weaponChain", (newWeaponChain) => {
  */
 state.subscribe("selectedObject", (newSelectedObject) => {
   if (newSelectedObject) {
-    updateRoomUI(state.currentRoom);
+    updateRoomUI();
+    updateWeaponUI();
 
     cardDetails.style.display = "flex";
 
@@ -707,6 +719,12 @@ state.subscribe("didWin", (didWin) => {
   }
 });
 
+settings.subscribe("textOnlyCards", () => {
+  updateRoomUI();
+  updateWeaponUI();
+  updateWeaponChainUI();
+});
+
 /* GAME CHECKER FUNCTIONS */
 /**
  * Checks if the player has won the game and ends the game if so
@@ -816,6 +834,10 @@ settingsBtn.onclick = () => {
 
 easyModeEl.addEventListener("change", (e) => {
   easyMode = e.target.checked;
+});
+
+textOnlyEl.addEventListener("change", (e) => {
+  settings.textOnlyCards = e.target.checked;
 });
 
 restartButtonSettingsEl.onclick = () => {

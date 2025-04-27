@@ -1,122 +1,241 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Scoundrel</title>
-  <link rel="stylesheet" href="styles.css" />
-</head>
-<body>
-  <a id="top"></a>
-  <div class="game-container">
-    <h1>Scoundrel</h1>
-    <h6>A single player rogue-like card game</h6>
-    <h6>Original game by Zach Gage and Kurt Bieg</h6>
-    <div class="deck-container">
-      <div class="card back card-counter" id="card-counter"></div>
-      <div class="health" id="health">20</div>
-      <div class="button-container">
-        <button class="red" id="run-button">Run</button>
-        <div class="icon-button-container">
-          <img src="assets/settings.png" alt="Settings" class="icon-button" id="settings" />
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Scoundrel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a id="top"></a>
+    <div class="game-container">
+      <h1>Scoundrel</h1>
+      <h6>A single player rogue-like card game</h6>
+      <h6>Original game by Zach Gage and Kurt Bieg</h6>
+      <div class="deck-container">
+        <div class="card back card-counter" id="card-counter"></div>
+        <div class="health" id="health">20</div>
+        <div class="button-container">
+          <button class="red" id="run-button">Run</button>
+          <div class="icon-button-container">
+            <img
+              src="assets/settings.png"
+              alt="Settings"
+              class="icon-button"
+              id="settings"
+            />
+          </div>
         </div>
       </div>
-    </div>
-    <div class="prompt-container">
-      <div id="prompt"></div>
-      <button class="action-button restart-button green" id="restart-button">Play again</button>
-    </div>
-    <div class="labeled-container" id="room-container">
-      <h5>ROOM</h5>
-      <div class="room" id="room"></div>
-    </div>
-    <div class="labeled-container">
-      <h5>WEAPON</h5>
-      <div class="weapon-chain">
-        <div class="card empty" id="weapon"></div>
-        <div class="divider" id="divider"></div>
-        <div class="weapon-monsters" id="weapon-monsters"></div>
+      <div class="prompt-container">
+        <div id="prompt"></div>
+        <button class="action-button restart-button green" id="restart-button">
+          Play again
+        </button>
       </div>
-    </div>
-    <div class="card-details hidden" id="card-details">
-      <h2 id="card-name"></h2>
-      <h6 id="card-type"></h6>
-      <div id="card-description"></div>
-      <button class="action-button" id="primary-action"></button>
-      <button class="action-button" id="secondary-action"></button>
-    </div>
-    <p id="log"></p>
-    <hr>
-    <div class="help">
-      <h1>How to play</h1>
-      <p>Scoundrel is a single player rouge-like dungeon crawler card game.</p>
-      <p>It is played with a standard deck of playing cards, without Jokers, red face cards, and red Aces. This deck is called the Dungeon.</p>
-      <div class="card back card-counter">40</div>
-      <p>You are also given a d20 dice starting at 20, which shows your health.</p>
-      <div class="health">20</div>
-      <p>At the start of the game, you are faced with 4 cards, which makes up the first room of the dungeon.</p>
-      <div class="labeled-container">
+      <div class="labeled-container" id="room-container">
         <h5>ROOM</h5>
-        <div class="room">
-          <div class="card" style="background: url('assets/deck/club-12.png') no-repeat center center"></div>
-          <div class="card" style="background: url('assets/deck/diamond-5.png') no-repeat center center"></div>
-          <div class="card" style="background: url('assets/deck/heart-7.png') no-repeat center center"></div>
-          <div class="card" style="background: url('assets/deck/spade-8.png') no-repeat center center"></div>
+        <div class="room" id="room"></div>
+      </div>
+      <div class="labeled-container">
+        <h5>WEAPON</h5>
+        <div class="weapon-chain">
+          <div class="card empty" id="weapon"></div>
+          <div class="divider" id="divider"></div>
+          <div class="weapon-monsters" id="weapon-monsters"></div>
         </div>
       </div>
-      <p>You have the option to Run, which moves the room to the bottom of the dungeon and presents you with a different room. However, you cannot run twice in a row.</p>
-      <button class="red">Run</button>
-      <p>If you do not choose to run, you must interact 3 of the 4 cards in the room.</p>
-      <h2>Card Types</h2>
-      <h3>♦️ Diamond: Weapon</h3>
-      <p>Equipping a weapon grants you with additional attack equal to the card value.</p>
-      <div class="card" style="background: url('assets/deck/diamond-5.png') no-repeat center center"></div>
-      <h3>❤️ Heart: Potion</h3>
-      <p>Drinking a potion restores health up to the card value.</p>
-      <ul>
-        <li>Your maximum health is 20.</li>
-        <li>You cannot take more than 1 potion per room.</li>
-      </ul>
-      <div class="card" style="background: url('assets/deck/heart-7.png') no-repeat center center"></div>
-      <h3>♠️♣️ Spade and Club: Monster</h3>
-      <p>Fighting a monster can be done in two ways:</p>
-      <ul>
-        <li><b>Barehanded:</b> take damage to your health equal to the card value.</li>
-        <li><b>With weapon:</b> take damage to your health equal to the monster's card value subtracted by the weapon's card value.</li>
-      </ul>
-      <div class="card" style="background: url('assets/deck/spade-8.png') no-repeat center center"></div>
-      <p><i>Example: The Eight of Hearts will deal 8 damage to your health when fought barehanded. It will deal 3 damage when fought with the Five of Diamonds.</i></p>
-      <p><b>Weapon durability:</b> each defeated monster of a weapon should be of lower value than the last monster it defeated.</p>
-      <div class="weapon-chain">
-        <div class="card" style="background: url('assets/deck/diamond-5.png') no-repeat center center"></div>
-        <div class="divider" style="display: flex"></div>
-        <div class="weapon-monsters">
-          <div class="card" style="background: url('assets/deck/spade-8.png') no-repeat center center"></div>
-        </div>
+      <div class="card-details hidden" id="card-details">
+        <h2 id="card-name"></h2>
+        <h6 id="card-type"></h6>
+        <div id="card-description"></div>
+        <button class="action-button" id="primary-action"></button>
+        <button class="action-button" id="secondary-action"></button>
       </div>
-      <p><i>Example: After using your weapon to defeat an Eight of Spade, you can only use your weapon for monsters with value of 7 or less.</i></p>
-      <p>After interacting with 3 cards, you can proceed to the next room. The last card from the previous room will be in the next room.</p>
-      <p>The goal of the game is to defeat all the monster cards while making sure your health does not go to 0.</p>
-      <p><a href="#top">Back to Top</a></p>
+      <p id="log"></p>
+      <hr />
+      <div class="help">
+        <h1>How to play</h1>
+        <p>
+          Scoundrel is a single player rouge-like dungeon crawler card game.
+        </p>
+        <p>
+          It is played with a standard deck of playing cards, without Jokers,
+          red face cards, and red Aces. This deck is called the Dungeon.
+        </p>
+        <div class="card back card-counter">40</div>
+        <p>
+          You are also given a d20 dice starting at 20, which shows your health.
+        </p>
+        <div class="health">20</div>
+        <p>
+          At the start of the game, you are faced with 4 cards, which makes up
+          the first room of the dungeon.
+        </p>
+        <div class="labeled-container">
+          <h5>ROOM</h5>
+          <div class="room">
+            <div
+              class="card"
+              style="
+                background: url('assets/deck/club-12.png') no-repeat center
+                  center;
+              "
+            ></div>
+            <div
+              class="card"
+              style="
+                background: url('assets/deck/diamond-5.png') no-repeat center
+                  center;
+              "
+            ></div>
+            <div
+              class="card"
+              style="
+                background: url('assets/deck/heart-7.png') no-repeat center
+                  center;
+              "
+            ></div>
+            <div
+              class="card"
+              style="
+                background: url('assets/deck/spade-8.png') no-repeat center
+                  center;
+              "
+            ></div>
+          </div>
+        </div>
+        <p>
+          You have the option to Run, which moves the room to the bottom of the
+          dungeon and presents you with a different room. However, you cannot
+          run twice in a row.
+        </p>
+        <button class="red">Run</button>
+        <p>
+          If you do not choose to run, you must interact 3 of the 4 cards in the
+          room.
+        </p>
+        <h2>Card Types</h2>
+        <h3>♦️ Diamond: Weapon</h3>
+        <p>
+          Equipping a weapon grants you with additional attack equal to the card
+          value.
+        </p>
+        <div
+          class="card"
+          style="
+            background: url('assets/deck/diamond-5.png') no-repeat center center;
+          "
+        ></div>
+        <h3>❤️ Heart: Potion</h3>
+        <p>Drinking a potion restores health up to the card value.</p>
+        <ul>
+          <li>Your maximum health is 20.</li>
+          <li>You cannot take more than 1 potion per room.</li>
+        </ul>
+        <div
+          class="card"
+          style="
+            background: url('assets/deck/heart-7.png') no-repeat center center;
+          "
+        ></div>
+        <h3>♠️♣️ Spade and Club: Monster</h3>
+        <p>Fighting a monster can be done in two ways:</p>
+        <ul>
+          <li>
+            <b>Barehanded:</b> take damage to your health equal to the card
+            value.
+          </li>
+          <li>
+            <b>With weapon:</b> take damage to your health equal to the
+            monster's card value subtracted by the weapon's card value.
+          </li>
+        </ul>
+        <div
+          class="card"
+          style="
+            background: url('assets/deck/spade-8.png') no-repeat center center;
+          "
+        ></div>
+        <p>
+          <i
+            >Example: The Eight of Hearts will deal 8 damage to your health when
+            fought barehanded. It will deal 3 damage when fought with the Five
+            of Diamonds.</i
+          >
+        </p>
+        <p>
+          <b>Weapon durability:</b> each defeated monster of a weapon should be
+          of lower value than the last monster it defeated.
+        </p>
+        <div class="weapon-chain">
+          <div
+            class="card"
+            style="
+              background: url('assets/deck/diamond-5.png') no-repeat center
+                center;
+            "
+          ></div>
+          <div class="divider" style="display: flex"></div>
+          <div class="weapon-monsters">
+            <div
+              class="card"
+              style="
+                background: url('assets/deck/spade-8.png') no-repeat center
+                  center;
+              "
+            ></div>
+          </div>
+        </div>
+        <p>
+          <i
+            >Example: After using your weapon to defeat an Eight of Spade, you
+            can only use your weapon for monsters with value of 7 or less.</i
+          >
+        </p>
+        <p>
+          After interacting with 3 cards, you can proceed to the next room. The
+          last card from the previous room will be in the next room.
+        </p>
+        <p>
+          The goal of the game is to defeat all the monster cards while making
+          sure your health does not go to 0.
+        </p>
+        <p><a href="#top">Back to Top</a></p>
+      </div>
     </div>
-  </div>
 
-  <div class="modal-overlay" id="modal-overlay">
-    <div class="modal">
-      <h2>Settings</h2>
-      <div class="option">
-        <span>Easy mode (requires restart)<h6>Start the game with complete red cards</h6></span>
-        <label class="switch">
-          <input type="checkbox" id="easy-mode-toggle">
-          <span class="slider"></span>
-        </label>
-      </div>
-      <div class="option">
-        <button class="action-button orange" id="restart-button-settings">Restart</button>
-        <button class="action-button" id="close-modal-button">Close</button>
+    <div class="modal-overlay" id="modal-overlay">
+      <div class="modal">
+        <h2>Settings</h2>
+        <div class="option">
+          <span
+            >Easy mode (requires restart)
+            <h6>Start the game with complete red cards</h6></span
+          >
+          <label class="switch">
+            <input type="checkbox" id="easy-mode-toggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="option">
+          <span
+            >Text only cards
+            <h6>Might improve performance</h6></span
+          >
+          <label class="switch">
+            <input type="checkbox" id="text-only-toggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="option">
+          <button class="action-button orange" id="restart-button-settings">
+            Restart
+          </button>
+          <button class="action-button" id="close-modal-button">Close</button>
+        </div>
       </div>
     </div>
-  </div>
-  <script src="script.js"></script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>
