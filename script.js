@@ -159,6 +159,7 @@ const modalEl = document.getElementById("modal-overlay");
 
 /* GAME SETTINGS */
 let easyMode = false;
+let textOnlyCards = false;
 
 /* GAME STATE */
 const state = createState({});
@@ -182,39 +183,6 @@ function shuffle(array) {
     [array[i], array[j]] = [array[j], array[i]];
   }
   return array;
-}
-
-/* DEBUGGER FUNCTIONS */
-function overrideCurrentRoom() {
-  currentRoom = [
-    new Card("spade", 14),
-    new Card("club", 13),
-    new Card("spade", 12),
-    new Card("diamond", 10),
-  ];
-}
-
-function overrideWeaponChain() {
-  state.weapon = new Weapon("diamond", 10, true);
-
-  state.weaponChain = [
-    new Card("club", 2),
-    new Card("club", 3),
-    new Card("club", 4),
-    new Card("club", 5),
-    new Card("club", 6),
-    new Card("club", 7),
-    new Card("club", 8),
-  ];
-}
-
-function increaseWeaponChain() {
-  if (!state.weapon) {
-    state.weapon = new Weapon("diamond", 10, true);
-    equipWeapon(state.weapon);
-  }
-
-  weaponChain.push(new Card("spade", 10));
 }
 
 /* INITIALIZATION FUNCTIONS */
@@ -267,79 +235,23 @@ function drawRoom() {
   state.deck = state.deck.slice(4);
 }
 
+/* PLAYER ACTIONS */
 /**
- * Creates a card element with a suit and value
- * @param {Card} card
- * @returns card HTML element
+ * Select an object to show its description
+ * @param {Card|Weapon|string} object - The object to show the description for
  */
-function createCardElement(card) {
-  const el = document.createElement("div");
-  el.classList.add("card");
-  el.classList.add(card.suit);
-  // el.innerText = card.toCardFace();
-  el.style.background = `url('assets/deck/${card.suit}-${card.value}.png') no-repeat center center`;
-  el.style.backgroundSize = "cover";
-
-  // add emphasis style if card is the selected card
-  const isCardSelected =
-    state.selectedObject &&
-    state.selectedObject instanceof Card &&
-    state.selectedObject.suit === card.suit &&
-    state.selectedObject.value === card.value;
-
-  if (isCardSelected) {
-    switch (card.suit) {
-      case "spade":
-        el.classList.add("selected-monster");
-        break;
-      case "club":
-        el.classList.add("selected-monster");
-        break;
-      case "heart":
-        el.classList.add("selected-potion");
-        break;
-      case "diamond":
-        el.classList.add("selected-weapon");
-        break;
-    }
-  }
-  return el;
-}
-
-/**
- * Creates an empty card element
- * @returns card HTML element
- */
-function createEmptyCardElement() {
-  const el = document.createElement("div");
-  el.classList.add("card");
-  el.classList.add("empty");
-  return el;
-}
-
-/**
- * Displays the card description and actions based on the card type
- * @param {Card} card
- */
-function showCardDescription(card) {
-  if (!card) return;
-  if (state.isGameOver) return;
-
-  state.selectedObject = card;
-}
-
-/**
- * Displays the description of a miscellaneous object (health, deck, weapon)
- * @param {string} object - The object to show the description for
- */
-function showMiscDescription(object) {
+function selectObject(object) {
   if (!object) return;
   if (state.isGameOver) return;
 
   state.selectedObject = object;
 }
 
-/* PLAYER ACTIONS */
+/**
+ * Fights a monster card
+ * @param {Card} card - The monster card to fight
+ * @param {boolean} isBarehanded - Whether to fight barehanded or with a weapon
+ */
 function fightMonster(card, isBarehanded) {
   if (state.isGameOver) return;
   if (!card) return;
@@ -395,6 +307,10 @@ function fightMonster(card, isBarehanded) {
   checkIfPlayerWon();
 }
 
+/**
+ * Equips a weapon card
+ * @param {Weapon} card - The weapon card to equip
+ */
 function equipWeapon(card) {
   if (state.isGameOver) return;
   if (!card) return;
@@ -412,6 +328,10 @@ function equipWeapon(card) {
   playCard(card);
 }
 
+/**
+ * Drinks a potion card
+ * @param {Card} card - The potion card to drink
+ */
 function drinkPotion(card) {
   if (state.isGameOver) return;
   if (!card) return;
@@ -424,16 +344,15 @@ function drinkPotion(card) {
   state.selectedObject = null;
   let restoredHealth = Math.min(card.value, 20 - state.health);
   state.health = Math.min(20, state.health + card.value);
-
   canDrinkPotion = false;
+
   log(`Drank the ${card.getTitle()}, restored ${restoredHealth} health.`);
   playCard(card);
 }
 
 /**
  * Completes the action of playing a card after the action is done
- * @param {Card} card the card to play
- * @returns
+ * @param {Card} card - The card to play
  */
 function playCard(card) {
   if (state.isGameOver) return;
@@ -449,6 +368,9 @@ function playCard(card) {
   checkIfRoomFinished();
 }
 
+/**
+ * Runs away from the current room
+ */
 function runAway() {
   if (!state.canRun) {
     log("You can't run twice in a row or after you have selected a card!");
@@ -478,12 +400,19 @@ function takeDamage(amount) {
 }
 
 /* UI FUNCTIONS */
+/**
+ * Updates the room UI with the current room cards.
+ * Clears the room element and populates it with card elements based on the new room state.
+ * If the room has fewer than 4 cards, empty card elements are added to fill the space.
+ *
+ * @param {Card[]} newRoom - An array of Card objects representing the current room.
+ */
 function updateRoomUI(newRoom) {
   roomEl.innerHTML = "";
 
   newRoom.forEach((card) => {
     const el = createCardElement(card);
-    el.onclick = () => showCardDescription(card);
+    el.onclick = () => selectObject(card);
     roomEl.appendChild(el);
   });
 
@@ -492,6 +421,60 @@ function updateRoomUI(newRoom) {
     const emptyCard = createEmptyCardElement();
     roomEl.appendChild(emptyCard);
   }
+}
+
+/**
+ * Creates a card element with a suit and value
+ * @param {Card} card - The card object to create an element for
+ * @returns card HTML element
+ */
+function createCardElement(card) {
+  const el = document.createElement("div");
+  el.classList.add("card");
+
+  if (textOnlyCards) {
+    el.innerText = card.toCardFace();
+    el.classList.add(card.suit);
+  } else {
+    el.style.background = `url('assets/deck/${card.suit}-${card.value}.png') no-repeat center center`;
+    el.style.backgroundSize = "cover";
+  }
+
+  // add emphasis style if card is the selected card
+  const isCardSelected =
+    state.selectedObject &&
+    state.selectedObject instanceof Card &&
+    state.selectedObject.suit === card.suit &&
+    state.selectedObject.value === card.value;
+
+  if (isCardSelected) {
+    switch (card.suit) {
+      case "spade":
+        el.classList.add("selected-monster");
+        break;
+      case "club":
+        el.classList.add("selected-monster");
+        break;
+      case "heart":
+        el.classList.add("selected-potion");
+        break;
+      case "diamond":
+        el.classList.add("selected-weapon");
+        break;
+    }
+  }
+  return el;
+}
+
+/**
+ * Creates an empty card element
+ * @returns card HTML element
+ */
+function createEmptyCardElement() {
+  const el = document.createElement("div");
+  el.classList.add("card");
+  el.classList.add("empty");
+  return el;
 }
 
 /* STATE SUBSCRIPTIONS */
@@ -590,13 +573,16 @@ state.subscribe("weaponChain", (newWeaponChain) => {
   }
 });
 
+/**
+ * Updates the object details text based on the selected object
+ */
 state.subscribe("selectedObject", (newSelectedObject) => {
   if (newSelectedObject) {
+    updateRoomUI(state.currentRoom);
+
     cardDetails.style.display = "flex";
 
     if (newSelectedObject instanceof Card) {
-      updateRoomUI(state.currentRoom);
-
       const type = newSelectedObject.getType();
 
       // reset actions visibility
@@ -664,15 +650,11 @@ state.subscribe("selectedObject", (newSelectedObject) => {
           cardDescriptionEl.textContent =
             "The source of all cards. Cards are dealt in 'rooms', which are groups of 4 cards. Defeat all 26 monster cards to win.";
           break;
-        case "weapon":
-          if (state.weapon) {
-            showCardDescription(state.weapon);
-          } else {
-            cardNameEl.textContent = "Empty weapon slot";
-            cardTypeEl.textContent = "Slot";
-            cardDescriptionEl.textContent =
-              "Equip a Diamond card as a weapon to fight monsters more effectively.";
-          }
+        case "empty-weapon":
+          cardNameEl.textContent = "Empty weapon slot";
+          cardTypeEl.textContent = "Slot";
+          cardDescriptionEl.textContent =
+            "Equip a Diamond card as a weapon to fight monsters more effectively.";
           break;
       }
       // hide actions
@@ -684,14 +666,23 @@ state.subscribe("selectedObject", (newSelectedObject) => {
   }
 });
 
+/**
+ * Updates the run button state based on the canRun property
+ */
 state.subscribe("canRun", (newCanRun) => {
   runBtn.disabled = !newCanRun;
 });
 
+/**
+ * Updates the log UI with the current logs
+ */
 state.subscribe("logs", (newLog) => {
   logEl.textContent = newLog;
 });
 
+/**
+ * Updates the restart button state based on the isGameOver property
+ */
 state.subscribe("isGameOver", (isGameOver) => {
   if (isGameOver) {
     restartButtonEl.style.display = "block";
@@ -700,6 +691,9 @@ state.subscribe("isGameOver", (isGameOver) => {
   }
 });
 
+/**
+ * Updates the prompt text based on the didWin property
+ */
 state.subscribe("didWin", (didWin) => {
   if (didWin) {
     promptEl.textContent = "You win!";
@@ -714,6 +708,9 @@ state.subscribe("didWin", (didWin) => {
 });
 
 /* GAME CHECKER FUNCTIONS */
+/**
+ * Checks if the player has won the game and ends the game if so
+ */
 function checkIfPlayerWon() {
   if (remainingMonsters <= 0) {
     log("You defeated all monsters! You win!");
@@ -721,6 +718,9 @@ function checkIfPlayerWon() {
   }
 }
 
+/**
+ * Checks if the room is finished and draws the next room if so
+ */
 function checkIfRoomFinished() {
   if (state.currentRoom.length === 1) {
     const lastCard = state.currentRoom[0];
@@ -733,6 +733,10 @@ function checkIfRoomFinished() {
   }
 }
 
+/**
+ * Ends the game and sets the game over state
+ * @param {boolean} didWin - Whether the player won or lost the game
+ */
 function endGame(didWin) {
   state.canRun = false;
   state.isGameOver = true;
@@ -740,8 +744,45 @@ function endGame(didWin) {
   state.didWin = didWin;
 }
 
+/**
+ * Logs a message to the game log
+ * @param {string} message - The message to log
+ */
 function log(message) {
   state.logs = `${message}\n${state.logs}`;
+}
+
+/* DEBUGGER FUNCTIONS */
+function overrideCurrentRoom() {
+  currentRoom = [
+    new Card("spade", 14),
+    new Card("club", 13),
+    new Card("spade", 12),
+    new Card("diamond", 10),
+  ];
+}
+
+function overrideWeaponChain() {
+  state.weapon = new Weapon("diamond", 10, true);
+
+  state.weaponChain = [
+    new Card("club", 2),
+    new Card("club", 3),
+    new Card("club", 4),
+    new Card("club", 5),
+    new Card("club", 6),
+    new Card("club", 7),
+    new Card("club", 8),
+  ];
+}
+
+function increaseWeaponChain() {
+  if (!state.weapon) {
+    state.weapon = new Weapon("diamond", 10, true);
+    equipWeapon(state.weapon);
+  }
+
+  weaponChain.push(new Card("spade", 10));
 }
 
 /* EVENT LISTENERS */
@@ -754,15 +795,15 @@ restartButtonEl.onclick = () => {
 };
 
 healthEl.onclick = () => {
-  showMiscDescription("health");
+  selectObject("health");
 };
 
 cardCounterEl.onclick = () => {
-  showMiscDescription("deck");
+  selectObject("deck");
 };
 
 weaponEl.onclick = () => {
-  showMiscDescription("weapon");
+  selectObject(state.weapon || "empty-weapon");
 };
 
 closeModalBtn.onclick = () => {
