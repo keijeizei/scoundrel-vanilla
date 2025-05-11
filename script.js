@@ -156,12 +156,14 @@ const cardPrimaryActionEl = document.getElementById("primary-action");
 const cardSecondaryActionEl = document.getElementById("secondary-action");
 
 const roomEl = document.getElementById("room");
+const deckContentsEl = document.getElementById("deck-contents");
 const logEl = document.getElementById("log");
 const runBtn = document.getElementById("run-button");
 
 const settingsBtn = document.getElementById("settings");
 const easyModeEl = document.getElementById("easy-mode-toggle");
 const textOnlyEl = document.getElementById("text-only-toggle");
+const deckContentsToggleEl = document.getElementById("deck-contents-toggle");
 
 const restartButtonSettingsEl = document.getElementById(
   "restart-button-settings"
@@ -174,6 +176,7 @@ let easyMode = false;
 
 const settings = createState({});
 settings.textOnlyCards = false;
+settings.showDeckContents = false;
 
 /* GAME STATE */
 const state = createState({});
@@ -530,6 +533,49 @@ function createEmptyCardElement() {
   return el;
 }
 
+function updateDeckContentsUI() {
+  deckContentsEl.innerHTML = "";
+
+  // Create table header for column labels (card values)
+  const headerRow = document.createElement("tr");
+  // Empty cell for row labels
+  const emptyHeaderCell = document.createElement("th");
+  headerRow.appendChild(emptyHeaderCell);
+  // Create header cells for card values
+  for (let j = 2; j <= 14; j++) {
+    const headerCell = document.createElement("th");
+    headerCell.textContent = faceValues[j] || j;
+    headerRow.appendChild(headerCell);
+  }
+  deckContentsEl.appendChild(headerRow);
+
+  // Populate deck contents with row labels (suits) and card data
+  for (let i = 0; i < 4; i++) {
+    const row = document.createElement("tr");
+    const rowLabelCell = document.createElement("th");
+    rowLabelCell.textContent = suitsNames[suits[i]];
+    row.appendChild(rowLabelCell);
+
+    for (let j = 2; j <= 14; j++) {
+      const cell = document.createElement("td");
+      const card = new Card(suits[i], j);
+      const isInDeck =
+        state.deck.some(
+          (deckCard) =>
+            deckCard.suit === card.suit && deckCard.value === card.value
+        ) ||
+        state.currentRoom.some(
+          (roomCard) =>
+            roomCard.suit === card.suit && roomCard.value === card.value
+        );
+
+      cell.innerHTML = isInDeck ? "&#10003;" : "";
+      row.appendChild(cell);
+    }
+    deckContentsEl.appendChild(row);
+  }
+}
+
 /* STATE SUBSCRIPTIONS */
 /**
  * Updates the health UI with the current health value
@@ -581,6 +627,10 @@ state.subscribe("deck", (newDeck) => {
 
 state.subscribe("currentRoom", () => {
   updateRoomUI();
+
+  if (settings.showDeckContents) {
+    updateDeckContentsUI();
+  }
 });
 
 /**
@@ -743,6 +793,14 @@ settings.subscribe("textOnlyCards", () => {
   updateWeaponChainUI();
 });
 
+settings.subscribe("showDeckContents", () => {
+  if (settings.showDeckContents) {
+    updateDeckContentsUI();
+  } else {
+    deckContentsEl.innerHTML = "";
+  }
+});
+
 /* GAME CHECKER FUNCTIONS */
 /**
  * Checks if the player has won the game and ends the game if so
@@ -856,6 +914,10 @@ easyModeEl.addEventListener("change", (e) => {
 
 textOnlyEl.addEventListener("change", (e) => {
   settings.textOnlyCards = e.target.checked;
+});
+
+deckContentsToggleEl.addEventListener("change", (e) => {
+  settings.showDeckContents = e.target.checked;
 });
 
 restartButtonSettingsEl.onclick = () => {

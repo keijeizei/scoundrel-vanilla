@@ -52,6 +52,7 @@
         <button class="action-button" id="primary-action"></button>
         <button class="action-button" id="secondary-action"></button>
       </div>
+      <table id="deck-contents"></table>
       <p id="log"></p>
       <hr />
       <div class="help">
@@ -225,6 +226,16 @@
           >
           <label class="switch">
             <input type="checkbox" id="text-only-toggle" />
+            <span class="slider"></span>
+          </label>
+        </div>
+        <div class="option">
+          <span
+            >Show deck contents
+            <h6>Display a table of remaining cards</h6></span
+          >
+          <label class="switch">
+            <input type="checkbox" id="deck-contents-toggle" />
             <span class="slider"></span>
           </label>
         </div>

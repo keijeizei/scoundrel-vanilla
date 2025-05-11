@@ -258,6 +258,20 @@ hr {
   box-shadow: 0 0 2px rgba(200, 200, 200, 0.5), 0 0 20px rgba(200, 200, 200, 0.5);
 }
 
+#deck-contents {
+  margin: 0 auto;
+  border-collapse: collapse;
+  text-align: center;
+  table-layout: fixed;
+  width: 100%;
+}
+
+#deck-contents th,
+#deck-contents td {
+  border: 1px solid #444;
+  padding: 2px;
+}
+
 #log {
   margin: 48px 0;
   font-size: 0.9rem;
